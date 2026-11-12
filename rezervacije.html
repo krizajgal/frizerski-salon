@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d3261e">
+  <meta name="description" content="Izberi storitev in prost termin v frizerskem salonu STAKi.">
+  <title>Rezervacija termina — STAKi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --paper:#f6f6f4; --ink:#0e0e0e; --red:#d3261e; --cyan:#36c6cb; --green:#c8f3d6; --green-ink:#145a31; --grey:#dcdcd8; --muted:#5c5c59; --line:rgba(14,14,14,.17); --display:"Bricolage Grotesque",Impact,sans-serif; --body:"Geist",Arial,sans-serif; --slot-height:37px; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); }
+    a { color:inherit; }
+    button,input { font:inherit; }
+    .topline { height:5px; background:var(--cyan); }
+    .site-header { position:sticky; top:0; z-index:5; border-bottom:1px solid var(--line); background:rgba(246,246,244,.97); backdrop-filter:blur(12px); }
+    .header-inner { max-width:1440px; min-height:74px; margin:auto; padding:0 5vw; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+    .brand { display:flex; align-items:center; gap:10px; font:800 28px/.85 var(--display); letter-spacing:-1.8px; text-decoration:none; }
+    .brand-symbol { width:29px; height:29px; display:grid; place-items:center; background:var(--red); color:white; font:800 18px/1 var(--display); transform:rotate(-6deg); }
+    .nav { display:flex; align-items:center; gap:clamp(15px,3vw,40px); }
+    .nav a { font-size:11px; font-weight:700; text-decoration:none; text-transform:uppercase; letter-spacing:.07em; }
+    .nav a:hover { color:var(--red); }
+    .nav a[aria-current="page"] { text-decoration:underline; text-decoration-color:var(--red); text-decoration-thickness:3px; text-underline-offset:8px; }
+    main { max-width:1440px; margin:auto; padding:44px 5vw 80px; }
+    .page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:35px; margin:0 0 30px; }
+    .eyebrow,.section-label { display:flex; align-items:center; gap:9px; margin:0 0 14px; font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; }
+    .eyebrow::before,.section-label::before { content:""; width:22px; height:2px; background:var(--red); }
+    h1,h2 { margin:0; font-family:var(--display); font-weight:800; text-transform:uppercase; letter-spacing:-.075em; }
+    h1 { font-size:clamp(54px,8vw,104px); line-height:.83; }
+    h1 span { color:var(--red); }
+    .heading-note { max-width:330px; margin:0 0 3px; color:var(--muted); font-size:13px; line-height:1.65; }
+    .layout { display:grid; grid-template-columns:minmax(270px,.72fr) minmax(0,1.65fr); gap:28px; align-items:start; }
+    .panel { border:1px solid var(--line); background:#fff; }
+    .services-panel { padding:22px; }
+    .panel-title { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 7px; font:800 24px/1 var(--display); text-transform:uppercase; letter-spacing:-.04em; }
+    .panel-subtitle { margin:0 0 17px; color:var(--muted); font-size:11px; line-height:1.5; }
+    .demo-tag { padding:5px 7px; background:#fff1b8; color:#634800; font-size:9px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
+    .service-list { display:grid; gap:7px; }
+    .service-option { position:relative; display:grid; grid-template-columns:18px 1fr auto; align-items:center; gap:10px; min-height:60px; padding:9px 10px; border:1px solid var(--line); cursor:pointer; transition:border .15s,background .15s; }
+    .service-option:hover { border-color:var(--ink); }
+    .service-option:has(input:checked) { border-color:var(--ink); background:#f2f2ef; box-shadow:inset 4px 0 var(--red); }
+    .service-option input { width:17px; height:17px; margin:0; accent-color:var(--red); }
+    .service-name { display:block; font-size:11px; font-weight:700; line-height:1.35; }
+    .service-meta { display:block; margin-top:4px; color:var(--muted); font-size:10px; }
+    .service-price { align-self:center; font:800 14px var(--display); white-space:nowrap; }
+    .selection-summary { margin-top:17px; padding-top:14px; border-top:2px solid var(--ink); }
+    .summary-row { display:flex; justify-content:space-between; gap:12px; padding:5px 0; color:var(--muted); font-size:11px; }
+    .summary-row strong { color:var(--ink); font-weight:700; text-align:right; }
+    .summary-total { margin-top:6px; padding-top:10px; border-top:1px solid var(--line); font-size:13px; }
+    .summary-total strong { font:800 22px var(--display); }
+    .calendar-panel { min-width:0; overflow:hidden; }
+    .calendar-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid var(--line); }
+    .week-label { font:800 18px/1 var(--display); text-transform:uppercase; letter-spacing:-.025em; }
+    .week-controls { display:flex; align-items:center; gap:6px; }
+    .week-controls button { min-height:36px; padding:0 10px; border:1px solid var(--line); background:white; color:var(--ink); font-size:10px; font-weight:700; cursor:pointer; }
+    .week-controls button:hover { border-color:var(--ink); }
+    .week-controls .today-button { background:var(--ink); color:white; }
+    .calendar-legend { display:flex; flex-wrap:wrap; gap:14px; padding:11px 18px 5px; color:var(--muted); font-size:10px; }
+    .legend-item { display:inline-flex; align-items:center; gap:6px; }
+    .legend-swatch { width:12px; height:12px; display:inline-block; border:1px solid var(--line); background:#f0f0ed; }
+    .legend-swatch.open { border-color:#71bd8b; background:var(--green); }
+    .legend-swatch.busy { background:repeating-linear-gradient(135deg,#eee 0 4px,#d7d7d3 4px 7px); }
+    .calendar-scroll { overflow:auto; padding:8px 12px 15px; scrollbar-color:#bbb transparent; }
+    .week-grid { --columns:repeat(6,minmax(112px,1fr)); display:grid; grid-template-columns:67px var(--columns); min-width:755px; }
+    .grid-corner { position:sticky; left:0; z-index:4; background:white; }
+    .day-head { min-height:55px; padding:8px 5px; border-bottom:2px solid var(--ink); text-align:center; }
+    .day-head strong { display:block; font:800 13px var(--display); text-transform:uppercase; }
+    .day-head span { display:block; margin-top:4px; color:var(--muted); font-size:10px; }
+    .day-head.is-today { background:#e7f9fa; }
+    .time-axis { position:sticky; left:0; z-index:3; display:grid; grid-template-rows:repeat(20,var(--slot-height)); background:white; }
+    .time-label { position:relative; padding:4px 5px 0 0; color:var(--muted); font-size:9px; text-align:right; }
+    .time-label:nth-child(odd)::after { content:""; position:absolute; left:100%; right:-8px; top:0; border-top:1px solid #eee; }
+    .day-track { position:relative; display:grid; grid-template-rows:repeat(20,var(--slot-height)); border-left:1px solid #eee; background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--slot-height) - 1px),#e9e9e6 calc(var(--slot-height) - 1px),#e9e9e6 var(--slot-height)); }
+    .slot { position:relative; z-index:1; min-width:0; padding:0; border:0; border-bottom:1px solid rgba(14,14,14,.045); background:transparent; cursor:not-allowed; }
+    .slot::after { content:""; position:absolute; inset:4px 3px; border:1px solid transparent; transition:background .12s,border .12s; }
+    .slot.is-available { cursor:pointer; }
+    .slot.is-available::after { border-color:#71bd8b; background:var(--green); }
+    .slot.is-available:hover::after,.slot.is-available:focus-visible::after { border-color:#247644; background:#a9e9bd; }
+    .slot.is-selected::after { border:2px solid #145a31; background:#79d798; box-shadow:0 0 0 2px white inset; }
+    .slot.is-past::after { background:#f4f4f1; border-color:transparent; }
+    .slot.is-past { cursor:not-allowed; }
+    .busy-block { position:absolute; z-index:2; left:4px; right:4px; display:flex; align-items:center; justify-content:center; padding:3px; overflow:hidden; border:1px solid #b9b9b4; background:repeating-linear-gradient(135deg,#eeeeeb 0 5px,#d9d9d5 5px 9px); color:#555; font-size:9px; font-weight:700; text-align:center; pointer-events:none; }
+    .calendar-hint { margin:0; padding:0 18px 16px; color:var(--muted); font-size:10px; line-height:1.5; }
+    .booking-details { display:grid; grid-template-columns:1fr 1fr; gap:25px; margin-top:27px; }
+    .selection-panel,.customer-panel { padding:22px; }
+    .selection-panel h2,.customer-panel h2 { margin:0 0 12px; font-size:23px; }
+    .selected-empty { margin:0; color:var(--muted); font-size:12px; line-height:1.6; }
+    .selected-time { display:none; padding:13px; background:#e9f7ed; border-left:4px solid #26804a; }
+    .selected-time.visible { display:block; }
+    .selected-time strong { display:block; font:800 18px var(--display); }
+    .selected-time span { display:block; margin-top:5px; color:var(--muted); font-size:11px; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .field { display:grid; gap:5px; }
+    .field.full { grid-column:1/-1; }
+    .field label { font-size:10px; font-weight:700; }
+    .field input { width:100%; height:40px; padding:0 10px; border:1px solid var(--line); border-radius:0; background:var(--paper); color:var(--ink); font-size:12px; }
+    .field input:focus { outline:2px solid var(--cyan); outline-offset:1px; }
+    .form-note { margin:11px 0 0; color:var(--muted); font-size:10px; line-height:1.55; }
+    .submit-button { min-height:46px; width:100%; margin-top:13px; border:0; background:var(--red); color:white; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; }
+    .submit-button:hover:not(:disabled) { background:var(--ink); }
+    .submit-button:disabled { background:#c8c8c4; color:#686865; cursor:not-allowed; }
+    .result-message { display:none; margin-top:12px; padding:12px; background:#e9f7ed; color:#145a31; font-size:11px; line-height:1.55; }
+    .result-message.visible { display:block; }
+    .footer { background:var(--ink); color:white; }
+    .footer-inner { max-width:1440px; margin:auto; padding:25px 5vw; display:flex; justify-content:space-between; align-items:center; gap:20px; }
+    .footer-inner .brand { color:white; }
+    .footer-copy { color:rgba(255,255,255,.6); font-size:10px; }
+    .footer-link { color:white; font-size:10px; text-decoration:none; text-transform:uppercase; letter-spacing:.06em; }
+    @media(max-width:980px) { main { padding-right:4vw; padding-left:4vw; } .layout { grid-template-columns:1fr; } .services-panel { order:1; } .calendar-panel { order:2; } .service-list { grid-template-columns:1fr 1fr; } }
+    @media(max-width:640px) {
+      .header-inner { min-height:62px; padding:0 4vw; }
+      .brand { font-size:23px; }
+      .brand-symbol { width:25px; height:25px; font-size:15px; }
+      .header-inner { flex-wrap:wrap; padding-top:9px; padding-bottom:9px; }
+      .nav { width:100%; justify-content:space-between; gap:5px; }
+      .nav a { font-size:9px; letter-spacing:.03em; }
+      main { padding-top:34px; }
+      .page-heading { display:block; margin-bottom:22px; }
+      h1 { font-size:clamp(54px,14vw,82px); }
+      .heading-note { margin-top:16px; }
+      .services-panel { padding:15px; }
+      .service-list { grid-template-columns:1fr; }
+      .calendar-toolbar { align-items:flex-start; padding:13px 12px; }
+      .week-label { padding-top:8px; font-size:15px; }
+      .week-controls { gap:4px; }
+      .week-controls button { min-height:34px; padding:0 8px; font-size:9px; }
+      .booking-details { grid-template-columns:1fr; gap:14px; }
+      .selection-panel,.customer-panel { padding:17px; }
+      .footer-inner { align-items:flex-start; flex-direction:column; padding:24px 5vw; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topline" aria-hidden="true"></div>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="STAKi — domov"><span class="brand-symbol" aria-hidden="true">S</span>STAKi</a>
+      <nav class="nav" aria-label="Glavna navigacija">
+        <a href="index.html">Domov</a>
+        <a href="cenik.html">Cenik</a>
+        <a href="rezervacije.html" aria-current="page">Rezervacije</a>
+        <a href="informacije.html">Informacije</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-heading">
+      <div><p class="eyebrow">STAKi / spletno naročanje</p><h1>Izberi <span>termin.</span></h1></div>
+      <p class="heading-note">Označi eno ali več storitev. Urnik bo pokazal samo začetke, pri katerih je dovolj časa in ni druge rezervacije.</p>
+    </div>
+
+    <div class="layout">
+      <section class="panel services-panel" aria-labelledby="services-title">
+        <h2 class="panel-title" id="services-title">Storitve <span class="demo-tag">Vzorčni cenik</span></h2>
+        <p class="panel-subtitle">Časi in cene so primeri za preizkus izračuna.</p>
+        <div class="service-list" id="service-list"></div>
+        <div class="selection-summary" aria-live="polite">
+          <div class="summary-row"><span>Izbrane storitve</span><strong id="summary-count">0</strong></div>
+          <div class="summary-row"><span>Skupno trajanje</span><strong id="summary-duration">Izberi storitev</strong></div>
+          <div class="summary-row summary-total"><span>Skupaj</span><strong id="summary-price">0,00 €</strong></div>
+        </div>
+      </section>
+
+      <section class="panel calendar-panel" aria-labelledby="calendar-title">
+        <div class="calendar-toolbar">
+          <h2 class="week-label" id="calendar-title">Tedenski urnik</h2>
+          <div class="week-controls" aria-label="Pomik po tednih">
+            <button type="button" id="prev-week" aria-label="Prejšnji teden">←</button>
+            <button class="today-button" type="button" id="next-week">Naslednji →</button>
+          </div>
+        </div>
+        <div class="calendar-legend" aria-label="Legenda urnika">
+          <span class="legend-item"><i class="legend-swatch open"></i> Ustreza izbrani storitvi</span>
+          <span class="legend-item"><i class="legend-swatch busy"></i> Zasedeno</span>
+        </div>
+        <div class="calendar-scroll" tabindex="0" aria-label="Urnik; na manjšem zaslonu se pomakni vodoravno">
+          <div class="week-grid" id="week-grid" role="grid" aria-label="Termini od ponedeljka do sobote"></div>
+        </div>
+        <p class="calendar-hint" id="calendar-hint">Najprej izberi storitev, nato klikni zelen začetek termina. Vsako polje predstavlja začetek na 30 minut.</p>
+      </section>
+    </div>
+
+    <div class="booking-details">
+      <section class="panel selection-panel" aria-labelledby="selected-title">
+        <h2 id="selected-title">Tvoj termin</h2>
+        <p class="selected-empty" id="selected-empty">Izberi storitev in prost termin v urniku.</p>
+        <div class="selected-time" id="selected-time" aria-live="polite"><strong id="selected-date"></strong><span id="selected-info"></span></div>
+      </section>
+      <section class="panel customer-panel" aria-labelledby="customer-title">
+        <h2 id="customer-title">Kontaktni podatki</h2>
+        <form id="booking-form">
+          <div class="form-grid">
+            <div class="field"><label for="customer-name">Ime</label><input id="customer-name" name="name" autocomplete="name" required></div>
+            <div class="field"><label for="customer-contact">Telefon ali e-pošta</label><input id="customer-contact" name="contact" autocomplete="email" required></div>
+          </div>
+          <p class="form-note">To je predogled: rezervacija se še ne shrani in kontaktnih podatkov ne pošlje. Povezavo s Supabase dodava po potrditvi storitev in cen.</p>
+          <button class="submit-button" id="submit-button" type="submit" disabled>Izberi termin</button>
+          <div class="result-message" id="result-message" role="status"></div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer"><div class="footer-inner"><a class="brand" href="index.html"><span class="brand-symbol" aria-hidden="true">S</span>STAKi</a><span class="footer-copy">© 2026 STAKi · Cenik in termini so za zdaj vzorčni</span><a class="footer-link" href="cenik.html">Cenik ↗</a><a class="footer-link" href="informacije.html">Informacije ↗</a></div></footer>
+
+  <script>
+    const services = [
+      { id:'cut-short', name:'Osnovno striženje', duration:30, price:18 },
+      { id:'wash-cut', name:'Pranje in striženje', duration:45, price:23 },
+      { id:'cut-long', name:'Striženje dolgih las', duration:60, price:32 },
+      { id:'cut-child', name:'Otroško striženje', duration:30, price:14 },
+      { id:'beard', name:'Urejanje brade', duration:30, price:15 },
+      { id:'cut-beard', name:'Striženje in brada', duration:60, price:29 },
+      { id:'blow-dry', name:'Pranje in sušenje', duration:45, price:22 },
+      { id:'style', name:'Oblikovanje pričeske', duration:30, price:18 },
+      { id:'roots', name:'Barvanje narastka', duration:90, price:48 },
+      { id:'colour-cut', name:'Barvanje in striženje', duration:120, price:68 }
+    ];
+    const openMinute = 8 * 60;
+    const closeMinute = 18 * 60;
+    const interval = 30;
+    const serviceList = document.getElementById('service-list');
+    const weekGrid = document.getElementById('week-grid');
+    const selectedServiceIds = new Set();
+    const today = atMidnight(new Date());
+    const currentMonday = mondayOf(today);
+    let weekOffset = today.getDay() === 0 ? 0 : 1;
+    let selectedSlot = null;
+
+    function atMidnight(date) { return new Date(date.getFullYear(), date.getMonth(), date.getDate()); }
+    function mondayOf(date) {
+      const result = atMidnight(date);
+      const day = (result.getDay() + 6) % 7;
+      result.setDate(result.getDate() - day);
+      return result;
+    }
+    function addDays(date, count) { const result = new Date(date); result.setDate(result.getDate() + count); return result; }
+    function dateKey(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+    function money(value) { return new Intl.NumberFormat('sl-SI',{style:'currency',currency:'EUR'}).format(value); }
+    function durationText(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      if (hours && mins) return `${hours} h ${mins} min`;
+      if (hours) return `${hours} h`;
+      return `${mins} min`;
+    }
+    function selectedTotals() {
+      const chosen = services.filter((service) => selectedServiceIds.has(service.id));
+      return { chosen, duration:chosen.reduce((sum, service) => sum + service.duration, 0), price:chosen.reduce((sum, service) => sum + service.price, 0) };
+    }
+    function renderServices() {
+      serviceList.innerHTML = services.map((service) => `
+        <label class="service-option" for="service-${service.id}">
+          <input id="service-${service.id}" type="checkbox" value="${service.id}" ${selectedServiceIds.has(service.id) ? 'checked' : ''}>
+          <span><span class="service-name">${service.name}</span><span class="service-meta">${durationText(service.duration)}</span></span>
+          <span class="service-price">${money(service.price)}</span>
+        </label>`).join('');
+      serviceList.querySelectorAll('input').forEach((input) => input.addEventListener('change', () => {
+        if (input.checked) selectedServiceIds.add(input.value); else selectedServiceIds.delete(input.value);
+        updateTotals();
+        renderWeek();
+      }));
+    }
+    function updateTotals() {
+      const totals = selectedTotals();
+      document.getElementById('summary-count').textContent = String(totals.chosen.length);
+      document.getElementById('summary-duration').textContent = totals.duration ? durationText(totals.duration) : 'Izberi storitev';
+      document.getElementById('summary-price').textContent = money(totals.price);
+      if (!totals.duration || (selectedSlot && !slotFits(selectedSlot.date, selectedSlot.start, totals.duration))) selectedSlot = null;
+      renderSelectedSlot();
+      document.getElementById('calendar-hint').textContent = totals.duration
+        ? `Izbrane storitve trajajo ${durationText(totals.duration)}. Zeleni so samo začetki, pri katerih se storitev konča pred naslednjo rezervacijo.`
+        : 'Najprej izberi storitev, nato klikni zelen začetek termina. Vsako polje predstavlja začetek na 30 minut.';
+    }
+    function demoBookings(date) {
+      if (weekOffset !== 1) return [];
+      const day = date.getDay();
+      if (day === 1) return [{ start:10*60+30, duration:30, label:'Zasedeno' }];
+      if (day === 5) return [{ start:14*60, duration:60, label:'Zasedeno' }];
+      if (day === 6) return [{ start:11*60, duration:90, label:'Zasedeno' }];
+      return [];
+    }
+    function slotFits(date, start, duration) {
+      if (!duration || start < openMinute || start + duration > closeMinute) return false;
+      const now = new Date();
+      if (date < today) return false;
+      if (dateKey(date) === dateKey(today) && start <= now.getHours()*60 + now.getMinutes()) return false;
+      return !demoBookings(date).some((booking) => start < booking.start + booking.duration && start + duration > booking.start);
+    }
+    function timeText(minutes) { return `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`; }
+    function formatDay(date) { return new Intl.DateTimeFormat('sl-SI',{weekday:'short'}).format(date).replace('.',''); }
+    function formatDate(date) { return new Intl.DateTimeFormat('sl-SI',{day:'numeric',month:'numeric'}).format(date); }
+    function renderWeek() {
+      const weekStart = addDays(currentMonday, weekOffset * 7);
+      const days = Array.from({length:6},(_,index) => addDays(weekStart,index));
+      const endDate = days[5];
+      document.getElementById('calendar-title').textContent = `${formatDate(days[0])} – ${formatDate(endDate)} ${endDate.getFullYear()}`;
+      const headers = days.map((date) => `<div class="day-head ${dateKey(date) === dateKey(today) ? 'is-today' : ''}" role="columnheader"><strong>${formatDay(date)}</strong><span>${formatDate(date)}</span></div>`).join('');
+      const timeAxis = `<div class="time-axis" aria-hidden="true">${Array.from({length:20},(_,row) => `<span class="time-label">${timeText(openMinute + row*interval)}</span>`).join('')}</div>`;
+      const columns = days.map((date) => {
+        const dateId = dateKey(date);
+        const slots = Array.from({length:20},(_,row) => {
+          const start = openMinute + row * interval;
+          const duration = selectedTotals().duration;
+          const available = duration > 0 && slotFits(date,start,duration);
+          const isSelected = selectedSlot && selectedSlot.dateKey === dateId && selectedSlot.start === start;
+          const past = date < today || (dateId === dateKey(today) && start <= new Date().getHours()*60 + new Date().getMinutes());
+          const disabled = !available;
+          const label = available ? `Prosto od ${timeText(start)}, konec ob ${timeText(start+duration)}` : 'Ta začetek ne ustreza izbrani storitvi ali je zaseden';
+          return `<button class="slot ${available?'is-available':''} ${isSelected?'is-selected':''} ${past?'is-past':''}" type="button" role="gridcell" aria-label="${formatDay(date)} ${formatDate(date)} ob ${timeText(start)}. ${label}" aria-pressed="${Boolean(isSelected)}" title="${timeText(start)}${available?` – ${timeText(start+duration)}`:''}" ${disabled?'disabled':''} data-date="${dateId}" data-start="${start}"></button>`;
+        }).join('');
+        const busy = demoBookings(date).map((booking) => {
+          const top = ((booking.start-openMinute)/interval)*37;
+          const height = (booking.duration/interval)*37;
+          return `<div class="busy-block" style="top:${top}px;height:${height}px" aria-label="Zaseden termin ${timeText(booking.start)} do ${timeText(booking.start+booking.duration)}">${booking.label}<br>${timeText(booking.start)}</div>`;
+        }).join('');
+        return `<div class="day-track" role="rowgroup" aria-label="${formatDay(date)} ${formatDate(date)}">${slots}${busy}</div>`;
+      }).join('');
+      weekGrid.innerHTML = `<div class="grid-corner"></div>${headers}${timeAxis}${columns}`;
+      weekGrid.querySelectorAll('.slot.is-available').forEach((button) => button.addEventListener('click', () => {
+        selectedSlot = { date:new Date(`${button.dataset.date}T00:00:00`), dateKey:button.dataset.date, start:Number(button.dataset.start) };
+        renderWeek();
+        renderSelectedSlot();
+      }));
+    }
+    function renderSelectedSlot() {
+      const empty = document.getElementById('selected-empty');
+      const selected = document.getElementById('selected-time');
+      const submit = document.getElementById('submit-button');
+      const totals = selectedTotals();
+      const valid = Boolean(selectedSlot && totals.duration && slotFits(selectedSlot.date,selectedSlot.start,totals.duration));
+      empty.hidden = valid;
+      selected.classList.toggle('visible',valid);
+      submit.disabled = !valid;
+      submit.textContent = valid ? 'Potrdi vzorčno rezervacijo' : (totals.duration ? 'Izberi zelen termin' : 'Izberi storitev');
+      if (valid) {
+        const end = selectedSlot.start + totals.duration;
+        document.getElementById('selected-date').textContent = `${new Intl.DateTimeFormat('sl-SI',{weekday:'long',day:'numeric',month:'long'}).format(selectedSlot.date)} ob ${timeText(selectedSlot.start)}`;
+        document.getElementById('selected-info').textContent = `${durationText(totals.duration)} · ${money(totals.price)} · konec ob ${timeText(end)}`;
+      }
+    }
+    document.getElementById('prev-week').addEventListener('click', () => { weekOffset -= 1; selectedSlot = null; renderWeek(); renderSelectedSlot(); });
+    document.getElementById('next-week').addEventListener('click', () => { weekOffset += 1; selectedSlot = null; renderWeek(); renderSelectedSlot(); });
+    document.getElementById('booking-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const totals = selectedTotals();
+      if (!selectedSlot || !totals.duration || !slotFits(selectedSlot.date,selectedSlot.start,totals.duration)) return;
+      const name = document.getElementById('customer-name').value.trim();
+      const result = document.getElementById('result-message');
+      result.textContent = `Predogled rezervacije za ${name}: ${new Intl.DateTimeFormat('sl-SI',{weekday:'long',day:'numeric',month:'long'}).format(selectedSlot.date)} ob ${timeText(selectedSlot.start)}, ${durationText(totals.duration)}, ${money(totals.price)}. Nič ni bilo poslano ali shranjeno.`;
+      result.classList.add('visible');
+    });
+
+    renderServices();
+    updateTotals();
+    renderWeek();
+  </script>
+</body>
+</html>

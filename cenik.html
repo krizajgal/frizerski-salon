@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d3261e">
+  <meta name="description" content="Storitve, trajanje in cene v salonu STAKi.">
+  <title>Cenik — STAKi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --paper:#f6f6f4; --ink:#0e0e0e; --red:#d3261e; --cyan:#36c6cb; --grey:#dcdcd8; --muted:#555553; --line:rgba(14,14,14,.17); --display:"Bricolage Grotesque",Impact,sans-serif; --body:"Geist",Arial,sans-serif; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); }
+    a { color:inherit; }
+    .topline { height:5px; background:var(--cyan); }
+    .site-header { position:sticky; top:0; z-index:5; border-bottom:1px solid var(--line); background:rgba(246,246,244,.97); backdrop-filter:blur(12px); }
+    .header-inner { max-width:1440px; min-height:74px; margin:auto; padding:0 5vw; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+    .brand { display:flex; align-items:center; gap:10px; font:800 28px/.85 var(--display); letter-spacing:-1.8px; text-decoration:none; }
+    .brand-symbol { width:29px; height:29px; display:grid; place-items:center; background:var(--red); color:white; font:800 18px/1 var(--display); transform:rotate(-6deg); }
+    .nav { display:flex; align-items:center; gap:clamp(15px,3vw,40px); }
+    .nav a { font-size:11px; font-weight:700; text-decoration:none; text-transform:uppercase; letter-spacing:.07em; }
+    .nav a:hover { color:var(--red); }
+    .nav a[aria-current="page"] { text-decoration:underline; text-decoration-color:var(--red); text-decoration-thickness:3px; text-underline-offset:8px; }
+    main { overflow:clip; }
+    .hero { min-height:420px; display:flex; flex-direction:column; justify-content:center; padding:65px max(5vw,calc((100vw - 1320px)/2)); background:var(--red); color:white; }
+    .eyebrow,.section-label { display:flex; align-items:center; gap:9px; margin:0 0 15px; font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; }
+    .eyebrow::before,.section-label::before { content:""; width:22px; height:2px; background:var(--cyan); }
+    h1,h2 { margin:0; font-family:var(--display); font-weight:800; text-transform:uppercase; letter-spacing:-.075em; }
+    h1 { max-width:850px; font-size:clamp(72px,12vw,155px); line-height:.76; }
+    h1 span { color:var(--cyan); }
+    .hero-text { max-width:500px; margin:25px 0 0; color:rgba(255,255,255,.86); font-size:14px; line-height:1.75; }
+    .section { padding:clamp(65px,9vw,115px) max(5vw,calc((100vw - 1100px)/2)); }
+    .price-head { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:28px; }
+    .section-label { color:var(--ink); }
+    h2 { font-size:clamp(46px,7vw,82px); line-height:.85; }
+    .demo-tag { display:inline-block; padding:8px 10px; background:#fff1b8; color:#634800; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .price-table { width:100%; border-collapse:collapse; background:white; }
+    .price-table th,.price-table td { padding:15px 17px; border-bottom:1px solid var(--line); text-align:left; }
+    .price-table th { background:var(--ink); color:white; font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+    .price-table td { font-size:12px; }
+    .price-table td:first-child { font-weight:700; }
+    .price-table td:last-child,.price-table th:last-child { text-align:right; white-space:nowrap; }
+    .price-table td:nth-child(2),.price-table th:nth-child(2) { color:var(--muted); }
+    .price-table th:nth-child(2) { color:white; }
+    .calc-note { display:grid; grid-template-columns:50px 1fr; gap:14px; align-items:center; margin-top:22px; padding:18px; background:var(--grey); }
+    .calc-mark { width:43px; height:43px; display:grid; place-items:center; background:var(--cyan); font:800 23px var(--display); }
+    .calc-note strong { display:block; font-size:12px; }
+    .calc-note p { margin:4px 0 0; color:var(--muted); font-size:11px; line-height:1.6; }
+    .booking-cta { display:flex; align-items:center; justify-content:space-between; gap:25px; padding:45px max(5vw,calc((100vw - 1100px)/2)); background:var(--ink); color:white; }
+    .booking-cta h2 { font-size:clamp(35px,5vw,58px); }
+    .booking-cta a { min-height:46px; display:inline-flex; align-items:center; gap:17px; padding:0 16px; background:var(--cyan); color:var(--ink); font-size:10px; font-weight:700; text-decoration:none; text-transform:uppercase; white-space:nowrap; }
+    .booking-cta a:hover { background:white; }
+    .footer { background:var(--paper); border-top:1px solid var(--line); }
+    .footer-inner { max-width:1440px; margin:auto; padding:25px 5vw; display:flex; justify-content:space-between; align-items:center; gap:20px; }
+    .footer .brand { font-size:25px; }
+    .footer-copy { color:var(--muted); font-size:10px; }
+    .footer-link { font-size:10px; text-decoration:none; text-transform:uppercase; letter-spacing:.06em; }
+    @media(max-width:760px) {
+      .header-inner { min-height:64px; padding:9px 4vw; flex-wrap:wrap; }
+      .brand { gap:7px; font-size:23px; }
+      .brand-symbol { width:25px; height:25px; font-size:15px; }
+      .nav { width:100%; gap:12px; flex-wrap:wrap; justify-content:space-between; }
+      .nav a { font-size:9px; letter-spacing:.03em; }
+      .hero { min-height:360px; padding:55px 6vw; }
+      h1 { font-size:clamp(65px,15vw,110px); }
+      .price-head { align-items:flex-start; flex-direction:column; }
+      .booking-cta { align-items:flex-start; flex-direction:column; padding:40px 6vw; }
+    }
+    @media(max-width:440px) {
+      .nav { gap:5px; }
+      .nav a { font-size:8px; }
+      .price-table th,.price-table td { padding:12px 8px; font-size:10px; }
+      .footer-inner { align-items:flex-start; flex-direction:column; padding:23px 6vw; }
+    }
+    @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } * { transition:none !important; } }
+  </style>
+</head>
+<body>
+  <div class="topline" aria-hidden="true"></div>
+  <header class="site-header"><div class="header-inner">
+    <a class="brand" href="index.html" aria-label="STAKi — domov"><span class="brand-symbol" aria-hidden="true">S</span>STAKi</a>
+    <nav class="nav" aria-label="Glavna navigacija">
+      <a href="index.html">Domov</a><a href="cenik.html" aria-current="page">Cenik</a><a href="rezervacije.html">Rezervacije</a><a href="informacije.html">Informacije</a>
+    </nav>
+  </div></header>
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">STAKi / storitve</p>
+      <h1>Jasne cene.<br><span>Dober rez.</span></h1>
+      <p class="hero-text">Preglej storitve, predviden čas in ceno. Ko izbereš več storitev, se trajanje in znesek seštejeta tudi pri rezervaciji.</p>
+    </section>
+    <section class="section" aria-labelledby="price-title">
+      <div class="price-head"><div><p class="section-label">Storitve in trajanje</p><h2 id="price-title">Cenik</h2></div><span class="demo-tag">Vzorčne cene — salon jih mora potrditi</span></div>
+      <table class="price-table">
+        <thead><tr><th>Storitev</th><th>Trajanje</th><th>Cena</th></tr></thead>
+        <tbody>
+          <tr><td>Osnovno striženje</td><td>30 min</td><td>18 €</td></tr>
+          <tr><td>Pranje in striženje</td><td>45 min</td><td>23 €</td></tr>
+          <tr><td>Striženje dolgih las</td><td>60 min</td><td>32 €</td></tr>
+          <tr><td>Otroško striženje</td><td>30 min</td><td>14 €</td></tr>
+          <tr><td>Urejanje brade</td><td>30 min</td><td>15 €</td></tr>
+          <tr><td>Striženje in brada</td><td>60 min</td><td>29 €</td></tr>
+          <tr><td>Pranje in sušenje</td><td>45 min</td><td>22 €</td></tr>
+          <tr><td>Oblikovanje pričeske</td><td>30 min</td><td>18 €</td></tr>
+          <tr><td>Barvanje narastka</td><td>90 min</td><td>48 €</td></tr>
+          <tr><td>Barvanje in striženje</td><td>120 min</td><td>68 €</td></tr>
+        </tbody>
+      </table>
+      <div class="calc-note"><span class="calc-mark" aria-hidden="true">+</span><div><strong>Izbereš lahko več storitev.</strong><p>Urnik sešteje čas in ceno ter obarva le termine, ki so dovolj dolgi in prosti. Primer: 30 + 45 minut pomeni skupaj 75 minut.</p></div></div>
+    </section>
+    <section class="booking-cta"><h2>Izbral si storitev?<br>Poglej proste termine.</h2><a href="rezervacije.html">Odpri urnik <span aria-hidden="true">↗</span></a></section>
+  </main>
+  <footer class="footer"><div class="footer-inner"><a class="brand" href="index.html"><span class="brand-symbol" aria-hidden="true">S</span>STAKi</a><span class="footer-copy">© 2026 STAKi · Cene in trajanja so vzorčni</span><a class="footer-link" href="informacije.html">Informacije salona ↗</a></div></footer>
+</body>
+</html>

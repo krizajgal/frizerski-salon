@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d3261e">
+  <meta name="description" content="Upravljanje storitev, urnika in rezervacij salona STAKi.">
+  <title>Upravljanje salona — STAKi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --paper:#f6f6f4; --ink:#0e0e0e; --red:#d3261e; --cyan:#36c6cb; --grey:#dcdcd8; --muted:#666662; --line:rgba(14,14,14,.16); --green:#c8f3d6; --green-ink:#145a31; --yellow:#fff1b8; --display:"Bricolage Grotesque",Impact,sans-serif; --body:"Geist",Arial,sans-serif; --slot:38px; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#eeefeb; color:var(--ink); font-family:var(--body); }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    .app { min-height:100vh; display:grid; grid-template-columns:245px minmax(0,1fr); }
+    .sidebar { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; padding:26px 17px 18px; background:var(--ink); color:white; }
+    .brand { display:flex; align-items:center; gap:10px; margin:0 10px 36px; color:white; font:800 27px/.9 var(--display); letter-spacing:-1.7px; text-decoration:none; }
+    .brand-mark { width:30px; height:30px; display:grid; place-items:center; background:var(--red); font:800 19px var(--display); transform:rotate(-6deg); }
+    .side-label { margin:0 10px 10px; color:rgba(255,255,255,.45); font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    .side-nav { display:grid; gap:5px; }
+    .side-nav button { width:100%; min-height:44px; display:flex; align-items:center; gap:11px; padding:0 11px; border:0; background:transparent; color:rgba(255,255,255,.7); font-size:12px; text-align:left; }
+    .side-nav button:hover,.side-nav button.active { background:#292929; color:white; }
+    .side-nav button.active { box-shadow:inset 3px 0 var(--cyan); }
+    .side-icon { width:18px; color:var(--cyan); font-size:15px; text-align:center; }
+    .sidebar-bottom { margin-top:auto; }
+    .salon-chip { margin:15px 3px; padding:13px 11px; border:1px solid rgba(255,255,255,.17); }
+    .salon-chip span { display:block; color:rgba(255,255,255,.5); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }
+    .salon-chip strong { display:block; margin-top:5px; font:700 16px var(--display); }
+    .site-link { display:block; padding:11px; color:rgba(255,255,255,.67); font-size:10px; text-decoration:none; }
+    .site-link:hover { color:var(--cyan); }
+    .main { min-width:0; }
+    .topbar { position:sticky; top:0; z-index:5; min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:0 32px; border-bottom:1px solid var(--line); background:rgba(246,246,244,.96); backdrop-filter:blur(10px); }
+    .crumb { color:var(--muted); font-size:11px; }
+    .crumb strong { color:var(--ink); }
+    .preview-badge { display:inline-flex; align-items:center; gap:7px; padding:8px 10px; background:var(--yellow); color:#644b00; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .preview-badge::before { content:""; width:6px; height:6px; border-radius:50%; background:#e2a300; }
+    .demo-tag { display:inline-block; padding:6px 8px; background:var(--yellow); color:#644b00; font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+    .content { max-width:1420px; margin:auto; padding:32px; }
+    .view { display:none; }
+    .view.active { display:block; }
+    .page-head { display:flex; align-items:flex-end; justify-content:space-between; gap:25px; margin-bottom:23px; }
+    .eyebrow { margin:0 0 11px; color:var(--muted); font-size:9px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+    h1,h2,h3 { margin:0; font-family:var(--display); font-weight:800; text-transform:uppercase; letter-spacing:-.06em; }
+    h1 { font-size:clamp(42px,5.4vw,72px); line-height:.86; }
+    h2 { font-size:25px; line-height:1; }
+    h3 { font-size:18px; }
+    .page-note { max-width:440px; margin:0; color:var(--muted); font-size:12px; line-height:1.65; }
+    .button { min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:0 13px; border:1px solid var(--ink); background:var(--ink); color:white; font-size:10px; font-weight:700; text-decoration:none; }
+    .button:hover { background:var(--red); border-color:var(--red); }
+    .button.light { background:white; color:var(--ink); }
+    .button.light:hover { background:var(--cyan); border-color:var(--cyan); }
+    .button.danger { border-color:#bb2b22; background:white; color:#a3211a; }
+    .button.danger:hover { background:#fff0ef; }
+    .button:disabled { opacity:.45; cursor:not-allowed; }
+    .panel { border:1px solid var(--line); background:white; }
+    .panel-head { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:18px 20px; border-bottom:1px solid var(--line); }
+    .panel-body { padding:20px; }
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+    .stat { min-height:115px; padding:17px; border-top:4px solid var(--red); background:white; }
+    .stat:nth-child(2) { border-color:var(--cyan); }
+    .stat:nth-child(3) { border-color:#75c98e; }
+    .stat:nth-child(4) { border-color:#b2a1e9; }
+    .stat span { display:block; color:var(--muted); font-size:10px; }
+    .stat strong { display:block; margin-top:13px; font:800 35px/.9 var(--display); }
+    .stat small { display:block; margin-top:8px; color:var(--muted); font-size:9px; }
+    .dashboard-grid { display:grid; grid-template-columns:1.25fr .75fr; gap:14px; }
+    .upcoming-list { display:grid; }
+    .upcoming-row { display:grid; grid-template-columns:62px 1fr auto; gap:12px; align-items:center; padding:13px 0; border-bottom:1px solid var(--line); }
+    .upcoming-row:last-child { border-bottom:0; }
+    .upcoming-date { color:var(--red); font:800 13px var(--display); text-transform:uppercase; }
+    .upcoming-name { font-size:11px; font-weight:700; }
+    .upcoming-detail { margin-top:4px; color:var(--muted); font-size:10px; }
+    .upcoming-time { font:700 12px var(--display); }
+    .quick-actions { display:grid; gap:8px; }
+    .quick-actions button { min-height:47px; display:flex; align-items:center; justify-content:space-between; padding:0 13px; border:1px solid var(--line); background:var(--paper); font-size:11px; font-weight:700; text-align:left; }
+    .quick-actions button:hover { border-color:var(--red); }
+    .quick-actions span { color:var(--red); font-size:17px; }
+    .empty { padding:25px 12px; color:var(--muted); font-size:11px; text-align:center; }
+    .data-table-wrap { overflow-x:auto; }
+    .data-table { width:100%; border-collapse:collapse; }
+    .data-table th,.data-table td { padding:12px 11px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+    .data-table th { color:var(--muted); font-size:9px; letter-spacing:.1em; text-transform:uppercase; }
+    .data-table td { font-size:11px; }
+    .data-table td strong { font-size:11px; }
+    .table-actions { display:flex; gap:6px; }
+    .mini-button { min-height:30px; padding:0 8px; border:1px solid var(--line); background:white; color:var(--ink); font-size:9px; font-weight:700; }
+    .mini-button:hover { border-color:var(--ink); }
+    .mini-button.remove { color:#a3211a; }
+    .status { display:inline-block; padding:5px 7px; background:#e4f4e9; color:#22623a; font-size:9px; font-weight:700; text-transform:uppercase; }
+    .status.pending { background:#fff1b8; color:#674d00; }
+    .section-split { display:grid; grid-template-columns:1fr 330px; gap:14px; align-items:start; }
+    .form-panel { padding:19px; border:1px solid var(--line); background:white; }
+    .form-panel h2 { margin-bottom:8px; }
+    .form-help { margin:0 0 16px; color:var(--muted); font-size:10px; line-height:1.55; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+    .field { display:grid; gap:5px; }
+    .field.full { grid-column:1/-1; }
+    .field label { font-size:9px; font-weight:700; }
+    .field input,.field select { width:100%; min-height:38px; padding:0 9px; border:1px solid var(--line); border-radius:0; background:var(--paper); color:var(--ink); font-size:11px; }
+    .field input:focus,.field select:focus { outline:2px solid var(--cyan); outline-offset:1px; }
+    .form-actions { display:flex; gap:8px; margin-top:13px; }
+    .form-message { min-height:16px; margin:9px 0 0; color:var(--muted); font-size:10px; }
+    .form-message.error { color:#a3211a; }
+    .appointment-services { display:grid; gap:5px; max-height:230px; overflow:auto; padding:2px; }
+    .appointment-service-option { min-height:43px; display:grid; grid-template-columns:16px 1fr auto; align-items:center; gap:8px; padding:7px 9px; border:1px solid var(--line); background:var(--paper); cursor:pointer; }
+    .appointment-service-option:has(input:checked) { border-color:#388b53; background:#e9f7ed; }
+    .appointment-service-option input { width:15px; height:15px; margin:0; accent-color:#258147; }
+    .appointment-service-option strong { display:block; font-size:10px; }
+    .appointment-service-option small { display:block; margin-top:2px; color:var(--muted); font-size:9px; }
+    .appointment-service-option .option-price { font:700 12px var(--display); white-space:nowrap; }
+    .appointment-total { margin-top:8px; padding:10px; background:#e9f7ed; color:var(--green-ink); font-size:10px; font-weight:700; line-height:1.5; }
+    .available-time-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+    .time-choice { min-height:34px; border:1px solid #71bd8b; background:var(--green); color:var(--green-ink); font-size:10px; font-weight:700; }
+    .time-choice:hover,.time-choice:focus-visible { border-color:#247644; background:#a9e9bd; }
+    .time-choice.selected { border:2px solid #145a31; background:#79d798; }
+    .available-time-help { margin:0 0 8px; color:var(--muted); font-size:9px; line-height:1.5; }
+    .service-title { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .sample-note { margin:0 0 14px; padding:10px 12px; border-left:3px solid #e2a300; background:var(--yellow); color:#644b00; font-size:10px; line-height:1.5; }
+    .week-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 17px; border-bottom:1px solid var(--line); background:white; }
+    .week-toolbar strong { font:800 17px var(--display); text-transform:uppercase; }
+    .week-controls { display:flex; gap:6px; }
+    .week-controls button { min-height:33px; padding:0 9px; border:1px solid var(--line); background:white; font-size:10px; font-weight:700; }
+    .agenda-scroll { overflow:auto; padding:10px; }
+    .agenda-grid { display:grid; grid-template-columns:58px repeat(6,minmax(118px,1fr)); min-width:790px; }
+    .agenda-head { min-height:49px; padding:8px 5px; border-bottom:2px solid var(--ink); text-align:center; }
+    .agenda-head strong { display:block; font:800 12px var(--display); text-transform:uppercase; }
+    .agenda-head span { display:block; margin-top:3px; color:var(--muted); font-size:9px; }
+    .agenda-time { position:sticky; left:0; z-index:3; display:grid; grid-template-rows:repeat(20,var(--slot)); background:white; }
+    .agenda-time span { padding:4px 5px 0 0; color:var(--muted); font-size:9px; text-align:right; }
+    .agenda-day { position:relative; display:grid; grid-template-rows:repeat(20,var(--slot)); border-left:1px solid #e7e7e3; background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--slot) - 1px),#e7e7e3 calc(var(--slot) - 1px),#e7e7e3 var(--slot)); }
+    .agenda-event { position:absolute; z-index:2; left:3px; right:3px; display:flex; flex-direction:column; justify-content:center; gap:3px; padding:5px 18px 5px 7px; overflow:hidden; border-left:3px solid var(--red); background:#fae3e1; color:#4a1714; font-size:9px; line-height:1.25; }
+    .agenda-event.block { border-color:#c29300; background:#fff0bd; color:#5d4700; }
+    .agenda-event strong { font-size:10px; }
+    .event-remove { position:absolute; top:3px; right:3px; width:19px; height:19px; padding:0; border:0; background:rgba(255,255,255,.7); color:inherit; font-size:14px; line-height:19px; }
+    .event-remove:hover { background:white; color:var(--red); }
+    .hours-table { width:100%; border-collapse:collapse; }
+    .hours-table th,.hours-table td { padding:9px 7px; border-bottom:1px solid var(--line); text-align:left; }
+    .hours-table th { color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.08em; }
+    .hours-table td { font-size:10px; }
+    .hours-table input[type=time] { min-height:32px; width:102px; padding:0 5px; border:1px solid var(--line); background:var(--paper); font-size:10px; }
+    .hours-table input[type=checkbox] { width:15px; height:15px; accent-color:var(--red); }
+    .hours-actions { margin-top:13px; display:flex; align-items:center; gap:12px; }
+    .check-label { display:flex; align-items:center; gap:7px; font-size:10px; }
+    .check-label input { accent-color:var(--red); }
+    .setting-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .setting-panel { padding:20px; border:1px solid var(--line); background:white; }
+    .setting-panel h2 { margin-bottom:8px; }
+    .toast { position:fixed; z-index:20; right:22px; bottom:22px; max-width:360px; padding:13px 16px; background:var(--ink); color:white; box-shadow:0 8px 28px #0003; font-size:11px; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .2s,transform .2s; }
+    .toast.show { opacity:1; transform:translateY(0); }
+    @media(max-width:1050px) { .app { grid-template-columns:205px minmax(0,1fr); } .sidebar { padding-right:12px; padding-left:12px; } .content { padding:25px 20px; } .topbar { padding:0 20px; } .stats { grid-template-columns:repeat(2,1fr); } .dashboard-grid { grid-template-columns:1fr; } .section-split { grid-template-columns:1fr; } }
+    @media(max-width:700px) {
+      .app { display:block; }
+      .sidebar { position:sticky; top:0; z-index:10; width:100%; height:auto; padding:9px 12px; }
+      .brand { margin:0 4px 8px; font-size:22px; }
+      .brand-mark { width:24px; height:24px; font-size:15px; }
+      .side-label,.sidebar-bottom { display:none; }
+      .side-nav { display:flex; gap:5px; overflow-x:auto; padding-bottom:2px; }
+      .side-nav button { width:auto; min-width:max-content; min-height:36px; padding:0 9px; font-size:10px; }
+      .side-nav button.active { box-shadow:inset 0 -3px var(--cyan); }
+      .side-icon { display:none; }
+      .topbar { min-height:47px; padding:0 14px; }
+      .content { padding:20px 13px 35px; }
+      .page-head { align-items:flex-start; flex-direction:column; }
+      .page-note { max-width:none; }
+      .stats { gap:8px; }
+      .stat { min-height:95px; padding:13px; }
+      .stat strong { font-size:29px; }
+      .section-split { gap:10px; }
+      .form-grid { grid-template-columns:1fr 1fr; }
+      .setting-grid { grid-template-columns:1fr; }
+      .panel-head,.panel-body { padding:14px; }
+    }
+    @media(max-width:430px) { .upcoming-row { grid-template-columns:50px 1fr auto; gap:7px; } .form-grid { grid-template-columns:1fr; } .field.full { grid-column:auto; } .hours-table input[type=time] { width:84px; } .hours-table th,.hours-table td { padding:8px 4px; } }
+    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; transition:none !important; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">S</span>STAKi</a>
+      <p class="side-label">Upravljanje salona</p>
+      <nav class="side-nav" aria-label="Upravljanje">
+        <button class="active" type="button" data-view="overview"><span class="side-icon">▦</span>Pregled</button>
+        <button type="button" data-view="appointments"><span class="side-icon">▣</span>Rezervacije</button>
+        <button type="button" data-view="services"><span class="side-icon">✂</span>Storitve in cenik</button>
+        <button type="button" data-view="schedule"><span class="side-icon">◷</span>Urnik in odsotnosti</button>
+        <button type="button" data-view="settings"><span class="side-icon">⚙</span>Podatki salona</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="salon-chip"><span>Upravljam salon</span><strong id="sidebar-salon-name">STAKi</strong></div>
+        <a class="site-link" href="index.html">↗ Ogled javne strani</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar"><div class="crumb">STAKi <span aria-hidden="true">/</span> <strong id="crumb-current">Pregled</strong></div><span class="preview-badge">Lokalni predogled</span></header>
+      <main class="content">
+        <section class="view active" id="view-overview">
+          <div class="page-head"><div><p class="eyebrow">Upravljanje / danes</p><h1>Pregled salona</h1></div><p class="page-note">Na enem mestu spremljaj rezervacije, storitve in urnik. V tej različici se spremembe shranijo samo v tem brskalniku.</p></div>
+          <div class="stats">
+            <article class="stat"><span>Prihajajoče rezervacije</span><strong id="stat-bookings">0</strong><small>V tem vzorčnem tednu</small></article>
+            <article class="stat"><span>Aktivne storitve</span><strong id="stat-services">0</strong><small>Vidne v ceniku</small></article>
+            <article class="stat"><span>Blokirani termini</span><strong id="stat-blocks">0</strong><small>Odmori in odsotnosti</small></article>
+            <article class="stat"><span>Naslednja rezervacija</span><strong id="stat-next">—</strong><small id="stat-next-note">Ni prihodnjih terminov</small></article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel"><div class="panel-head"><h2>Naslednje rezervacije</h2><button class="button light" type="button" data-open-view="appointments">Vse rezervacije ↗</button></div><div class="panel-body upcoming-list" id="upcoming-list"></div></section>
+            <section class="panel"><div class="panel-head"><h2>Hitra opravila</h2></div><div class="panel-body quick-actions"><button type="button" data-open-view="appointments">Dodaj rezervacijo stranke <span>＋</span></button><button type="button" data-open-view="services">Dodaj ali uredi storitev <span>＋</span></button><button type="button" data-open-view="schedule">Vnesi malico ali dopust <span>＋</span></button><button type="button" data-open-view="schedule">Uredi tedenski urnik <span>↗</span></button></div></section>
+          </div>
+        </section>
+
+        <section class="view" id="view-appointments">
+          <div class="page-head"><div><p class="eyebrow">Stranke / termini</p><h1>Rezervacije</h1></div><p class="page-note">Potrdi, prestavi ali odstrani termin. Ob odstranitvi bo čas spet na voljo v urniku.</p></div>
+          <div class="section-split">
+            <section class="panel"><div class="panel-head"><h2>Vse rezervacije</h2><span class="demo-tag" id="appointment-count">0 terminov</span></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Datum in ura</th><th>Stranka</th><th>Storitev</th><th>Trajanje</th><th>Cena</th><th>Stanje</th><th>Dejanja</th></tr></thead><tbody id="appointment-rows"></tbody></table></div></section>
+            <section class="form-panel"><h2>Dodaj rezervacijo</h2><p class="form-help">Za eno stranko izberi eno ali več storitev. Prikazali se bodo samo začetki, ki ustrezajo skupnemu trajanju in urniku.</p>
+              <form id="appointment-form"><input type="hidden" id="appointment-id"><div class="form-grid">
+                <div class="field full"><label for="appointment-client">Ime stranke</label><input id="appointment-client" required placeholder="Ime stranke"></div>
+                <div class="field full"><label for="appointment-contact">Telefon ali e-pošta</label><input id="appointment-contact" placeholder="Kontakt (neobvezno)"></div>
+                <div class="field full"><label>Storitve za to stranko</label><div class="appointment-services" id="appointment-services"></div><div class="appointment-total" id="appointment-total">Izberi eno ali več storitev za izračun skupnega časa in cene.</div></div>
+                <div class="field full"><label for="appointment-date">Datum</label><input id="appointment-date" type="date" required></div>
+                <div class="field full"><label>Izvedljivi začetki</label><p class="available-time-help" id="available-time-help">Izberi storitve in datum za prikaz prostih začetkov.</p><div class="available-time-grid" id="available-time-grid"></div><input id="appointment-time" type="hidden"></div>
+              </div><div class="form-actions"><button class="button" id="appointment-submit" type="submit">Dodaj rezervacijo</button><button class="button light" id="appointment-cancel-edit" type="button" hidden>Prekliči urejanje</button></div><p class="form-message" id="appointment-message" aria-live="polite"></p></form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-services">
+          <div class="page-head"><div><p class="eyebrow">Ponudba / cene</p><h1>Storitve in cenik</h1></div><p class="page-note">Dodaj storitev z imenom, trajanjem in ceno. Aktivne storitve se pokažejo strankam pri rezervaciji.</p></div>
+          <p class="sample-note">Vzorčne storitve so dodane samo za prikaz. Uredi jih ali odstrani in vnesi svoj cenik. Spremembe so shranjene lokalno v tem brskalniku.</p>
+          <div class="section-split">
+            <section class="panel"><div class="panel-head"><div class="service-title"><h2>Seznam storitev</h2><span class="demo-tag" id="service-count">0 storitev</span></div></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Storitev</th><th>Trajanje</th><th>Cena</th><th>Vidnost</th><th>Dejanja</th></tr></thead><tbody id="service-rows"></tbody></table></div></section>
+            <section class="form-panel"><h2 id="service-form-title">Dodaj storitev</h2><p class="form-help">Trajanje je v minutah. Stranka lahko združi več storitev; skupni čas in cena se seštejeta.</p>
+              <form id="service-form"><input type="hidden" id="service-id"><div class="form-grid">
+                <div class="field full"><label for="service-name">Ime storitve</label><input id="service-name" required maxlength="70" placeholder="npr. Striženje"></div>
+                <div class="field"><label for="service-duration">Trajanje (min)</label><input id="service-duration" type="number" required min="5" step="5" value="30"></div>
+                <div class="field"><label for="service-price">Cena (€)</label><input id="service-price" type="number" required min="0" step="0.50" placeholder="18,00"></div>
+                <label class="check-label field full"><input id="service-active" type="checkbox" checked> Storitev je na voljo strankam</label>
+              </div><div class="form-actions"><button class="button" id="service-save" type="submit">Shrani storitev</button><button class="button light" id="service-cancel" type="button" hidden>Prekliči</button></div><p class="form-message" id="service-message" aria-live="polite"></p></form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-schedule">
+          <div class="page-head"><div><p class="eyebrow">Razpoložljivost / odsotnosti</p><h1>Urnik in odsotnosti</h1></div><p class="page-note">Nastavi redni delovni čas in malico po dnevih. Enkratne blokade uporabi za dopust, praznike, sestanke ali drugo odsotnost.</p></div>
+          <section class="panel" style="margin-bottom:14px"><div class="panel-head"><h2>Pregled tedna</h2></div><div class="week-toolbar"><strong id="agenda-week-label"></strong><div class="week-controls"><button id="agenda-prev" type="button" aria-label="Prejšnji teden">←</button><button id="agenda-next" type="button" aria-label="Naslednji teden">Naslednji teden →</button></div></div><div class="agenda-scroll" tabindex="0" aria-label="Tedenski urnik, pomakni vodoravno"><div class="agenda-grid" id="agenda-grid"></div></div></section>
+          <div class="section-split">
+            <section class="form-panel"><h2>Redni tedenski urnik</h2><p class="form-help">Nastavi delovni čas in po želji vsakodnevni odmor. Zaprt dan ni na voljo za rezervacije.</p><div class="data-table-wrap"><table class="hours-table"><thead><tr><th>Dan</th><th>Odprt</th><th>Od</th><th>Do</th><th>Malica</th><th>Od</th><th>Do</th></tr></thead><tbody id="hours-rows"></tbody></table></div><div class="hours-actions"><button class="button" id="hours-save" type="button">Shrani urnik</button><span class="form-message" id="hours-message" aria-live="polite"></span></div></section>
+            <section class="form-panel"><h2>Blokiraj čas</h2><p class="form-help">Dodaj malico, dopust, praznik ali drug čas, ko salon ne sprejema rezervacij.</p><form id="block-form"><div class="form-grid">
+              <div class="field"><label for="block-type">Razlog</label><select id="block-type"><option>Malica</option><option>Dopust</option><option>Praznik</option><option>Odsotnost</option><option>Drugo</option></select></div>
+              <div class="field"><label for="block-note">Opomba (neobvezno)</label><input id="block-note" maxlength="50" placeholder="npr. letni dopust"></div>
+              <div class="field"><label for="block-from-date">Od datuma</label><input id="block-from-date" type="date" required></div>
+              <div class="field"><label for="block-to-date">Do datuma</label><input id="block-to-date" type="date" required></div>
+              <label class="check-label field full"><input id="block-allday" type="checkbox"> Zapri ves dan (dopust / praznik)</label>
+              <div class="field block-time-field"><label for="block-start">Od ure</label><input id="block-start" type="time" step="1800" value="12:00"></div>
+              <div class="field block-time-field"><label for="block-end">Do ure</label><input id="block-end" type="time" step="1800" value="13:00"></div>
+            </div><div class="form-actions"><button class="button" type="submit">Dodaj blokado</button></div><p class="form-message" id="block-message" aria-live="polite"></p></form></section>
+          </div>
+          <section class="panel" style="margin-top:14px"><div class="panel-head"><h2>Dodane blokade</h2><span class="demo-tag" id="block-count">0 blokad</span></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>Razlog</th><th>Obdobje</th><th>Čas</th><th>Opomba</th><th>Dejanje</th></tr></thead><tbody id="block-rows"></tbody></table></div></section>
+        </section>
+
+        <section class="view" id="view-settings">
+          <div class="page-head"><div><p class="eyebrow">Profil / javna stran</p><h1>Podatki salona</h1></div><p class="page-note">Podatki se prikažejo na javni informacijski strani. Trenutno se shranjujejo samo v tem brskalniku.</p></div>
+          <div class="setting-grid">
+            <section class="setting-panel"><h2>Osnovni podatki</h2><p class="form-help">Vnesi podatke, po katerih stranke najdejo salon.</p><form id="salon-form"><div class="form-grid">
+              <div class="field full"><label for="salon-name">Ime salona</label><input id="salon-name" required></div>
+              <div class="field full"><label for="salon-address">Naslov</label><input id="salon-address" placeholder="Ulica, hišna številka, kraj"></div>
+              <div class="field"><label for="salon-phone">Telefon</label><input id="salon-phone" type="tel"></div>
+              <div class="field"><label for="salon-email">E-pošta</label><input id="salon-email" type="email"></div>
+              <div class="field full"><label for="salon-instagram">Instagram (povezava)</label><input id="salon-instagram" type="url" placeholder="https://instagram.com/…"></div>
+            </div><div class="form-actions"><button class="button" type="submit">Shrani podatke</button></div><p class="form-message" id="salon-message" aria-live="polite"></p></form></section>
+            <section class="setting-panel"><h2>Predogled in povezava</h2><p class="form-help">Tukaj bomo pozneje povezali prijavo lastnika salona in shranjevanje v Supabase.</p><div class="quick-actions"><button type="button" onclick="window.open('index.html','_blank')">Javna domača stran <span>↗</span></button><button type="button" onclick="window.open('cenik.html','_blank')">Javni cenik <span>↗</span></button><button type="button" onclick="window.open('rezervacije.html','_blank')">Javne rezervacije <span>↗</span></button><button type="button" onclick="window.open('informacije.html','_blank')">Javne informacije <span>↗</span></button></div></section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = 'staki-admin-preview-v1';
+    const weekdays = ['Ponedeljek','Torek','Sreda','Četrtek','Petek','Sobota','Nedelja'];
+    const shortDays = ['Pon','Tor','Sre','Čet','Pet','Sob'];
+    const baseServices = [
+      {id:'cut-short',name:'Osnovno striženje',duration:30,price:18,active:true},
+      {id:'wash-cut',name:'Pranje in striženje',duration:45,price:23,active:true},
+      {id:'cut-long',name:'Striženje dolgih las',duration:60,price:32,active:true},
+      {id:'cut-child',name:'Otroško striženje',duration:30,price:14,active:true},
+      {id:'beard',name:'Urejanje brade',duration:30,price:15,active:true},
+      {id:'cut-beard',name:'Striženje in brada',duration:60,price:29,active:true},
+      {id:'blow-dry',name:'Pranje in sušenje',duration:45,price:22,active:true},
+      {id:'style',name:'Oblikovanje pričeske',duration:30,price:18,active:true},
+      {id:'roots',name:'Barvanje narastka',duration:90,price:48,active:true},
+      {id:'colour-cut',name:'Barvanje in striženje',duration:120,price:68,active:true}
+    ];
+    function midnight(date) { return new Date(date.getFullYear(),date.getMonth(),date.getDate()); }
+    function nextMonday() { const today=midnight(new Date()); const day=(today.getDay()+6)%7; return shiftDate(today,day===0?0:7-day); }
+    function shiftDate(date,days) { const result=new Date(date); result.setDate(result.getDate()+days); return result; }
+    function keyDate(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+    function money(value) { return new Intl.NumberFormat('sl-SI',{style:'currency',currency:'EUR'}).format(value); }
+    function durationText(minutes) { const h=Math.floor(minutes/60),m=minutes%60; return h&&m?`${h} h ${m} min`:h?`${h} h`:`${m} min`; }
+    function fmtDate(date,options={weekday:'short',day:'numeric',month:'short'}) { return new Intl.DateTimeFormat('sl-SI',options).format(date); }
+    function makeId() { return (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+    function initialState() {
+      const monday=nextMonday();
+      const iso=(day,time)=>`${keyDate(shiftDate(monday,day))}T${time}`;
+      const weeklyHours=weekdays.map((_,day)=>({day,closed:day===6,start:'08:00',end:'18:00',hasBreak:false,breakStart:'12:00',breakEnd:'13:00'}));
+      return { salon:{name:'STAKi',address:'',phone:'',email:'',instagram:''},services:structuredClone(baseServices),hours:weeklyHours,blocks:[],appointments:[
+        {id:makeId(),client:'Stranka A',contact:'',serviceId:'cut-short',serviceIds:['cut-short'],serviceName:'Osnovno striženje',duration:30,price:18,start:iso(0,'10:30'),status:'Potrjeno'},
+        {id:makeId(),client:'Stranka B',contact:'',serviceId:'cut-beard',serviceIds:['cut-beard'],serviceName:'Striženje in brada',duration:60,price:29,start:iso(4,'14:00'),status:'Potrjeno'},
+        {id:makeId(),client:'Stranka C',contact:'',serviceId:'roots',serviceIds:['roots'],serviceName:'Barvanje narastka',duration:90,price:48,start:iso(5,'11:00'),status:'Novo'}
+      ]};
+    }
+    function loadState() {
+      try { const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)); if(saved && Array.isArray(saved.services) && Array.isArray(saved.hours)) return saved; } catch {}
+      return initialState();
+    }
+    let state=loadState();
+    let agendaOffset=0;
+    let toastTimer;
+    function persist(message='Spremembe so shranjene v tem brskalniku.') {
+      try { localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); showToast(message); }
+      catch { showToast('Shranjevanje v tem brskalniku ni na voljo. Podatki bodo povezani s Supabase.'); }
+      renderAll();
+    }
+    function showToast(message) { const toast=document.getElementById('toast'); toast.textContent=message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove('show'),2800); }
+    function serviceFor(id) { return state.services.find((service)=>service.id===id); }
+    function appointmentEnd(appointment) { const service=serviceFor(appointment.serviceId); return new Date(new Date(appointment.start).getTime()+((appointment.duration || service?.duration || 30)*60000)); }
+    function appointmentDuration(appointment) { return appointment.duration || serviceFor(appointment.serviceId)?.duration || 30; }
+    function appointmentPrice(appointment) { return appointment.price ?? serviceFor(appointment.serviceId)?.price ?? 0; }
+    function appointmentServiceText(appointment) {
+      if(appointment.serviceName) return appointment.serviceName;
+      const ids=appointment.serviceIds?.length?appointment.serviceIds:(appointment.serviceId?[appointment.serviceId]:[]);
+      return ids.map((id)=>serviceFor(id)?.name).filter(Boolean).join(' + ')||'Storitev';
+    }
+    function startOfWeek(date) { const d=midnight(date); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d; }
+    function appointmentDate(appointment) { return new Date(appointment.start); }
+    function countFuture() { const now=new Date(); return state.appointments.filter((a)=>appointmentDate(a)>=now).length; }
+
+    // View navigation
+    const viewNames={overview:'Pregled',appointments:'Rezervacije',services:'Storitve in cenik',schedule:'Urnik in odsotnosti',settings:'Podatki salona'};
+    function openView(name) {
+      document.querySelectorAll('.view').forEach((view)=>view.classList.toggle('active',view.id===`view-${name}`));
+      document.querySelectorAll('.side-nav button').forEach((button)=>button.classList.toggle('active',button.dataset.view===name));
+      document.getElementById('crumb-current').textContent=viewNames[name]||'Pregled';
+      if(name==='appointments') document.getElementById('appointment-client').focus({preventScroll:true});
+    }
+    document.querySelectorAll('.side-nav [data-view]').forEach((button)=>button.addEventListener('click',()=>openView(button.dataset.view)));
+    document.querySelectorAll('[data-open-view]').forEach((button)=>button.addEventListener('click',()=>openView(button.dataset.openView)));
+
+    // Dashboard
+    function renderOverview() {
+      const now=new Date();
+      const upcoming=state.appointments.filter((a)=>appointmentDate(a)>=now).sort((a,b)=>a.start.localeCompare(b.start));
+      document.getElementById('stat-bookings').textContent=String(upcoming.length);
+      document.getElementById('stat-services').textContent=String(state.services.filter((s)=>s.active).length);
+      const weekStart=startOfWeek(nextMonday());
+      const weekEnd=shiftDate(weekStart,7);
+      const blockCount=state.blocks.filter((b)=>new Date(`${b.toDate}T23:59:59`)>=weekStart && new Date(`${b.fromDate}T00:00:00`)<weekEnd).length;
+      document.getElementById('stat-blocks').textContent=String(blockCount);
+      const next=upcoming[0];
+      document.getElementById('stat-next').textContent=next?new Intl.DateTimeFormat('sl-SI',{hour:'2-digit',minute:'2-digit'}).format(appointmentDate(next)):'—';
+      document.getElementById('stat-next-note').textContent=next?`${fmtDate(appointmentDate(next),{weekday:'long',day:'numeric',month:'long'})} · ${next.client}`:'Ni prihodnjih terminov';
+      const list=document.getElementById('upcoming-list');
+      list.innerHTML=upcoming.slice(0,5).map((a)=>{
+        const date=appointmentDate(a);
+          return `<div class="upcoming-row"><span class="upcoming-date">${fmtDate(date,{weekday:'short',day:'numeric',month:'short'})}</span><div><div class="upcoming-name">${escapeHtml(a.client)}</div><div class="upcoming-detail">${escapeHtml(appointmentServiceText(a))} · ${durationText(appointmentDuration(a))}</div></div><span class="upcoming-time">${fmtDate(date,{hour:'2-digit',minute:'2-digit'})}</span></div>`;
+      }).join('') || '<p class="empty">Za zdaj ni prihajajočih rezervacij.</p>';
+    }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g,(char)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+
+    // Service management
+    function renderServices() {
+      const rows=document.getElementById('service-rows');
+      document.getElementById('service-count').textContent=`${state.services.length} storitev`;
+      rows.innerHTML=state.services.map((s)=>`<tr><td><strong>${escapeHtml(s.name)}</strong></td><td>${durationText(s.duration)}</td><td>${money(s.price)}</td><td><span class="status ${s.active?'':'pending'}">${s.active?'Aktivna':'Skrita'}</span></td><td><div class="table-actions"><button class="mini-button" type="button" data-edit-service="${s.id}">Uredi</button><button class="mini-button remove" type="button" data-delete-service="${s.id}">Odstrani</button></div></td></tr>`).join('') || '<tr><td colspan="5" class="empty">Dodaj prvo storitev.</td></tr>';
+      const selectedIds=selectedAppointmentServiceIds();
+      renderAppointmentServiceOptions(selectedIds);
+      rows.querySelectorAll('[data-edit-service]').forEach((button)=>button.addEventListener('click',()=>editService(button.dataset.editService)));
+      rows.querySelectorAll('[data-delete-service]').forEach((button)=>button.addEventListener('click',()=>deleteService(button.dataset.deleteService)));
+    }
+    function editService(id) {
+      const service=serviceFor(id); if(!service) return;
+      document.getElementById('service-id').value=service.id;
+      document.getElementById('service-name').value=service.name;
+      document.getElementById('service-duration').value=service.duration;
+      document.getElementById('service-price').value=service.price;
+      document.getElementById('service-active').checked=service.active;
+      document.getElementById('service-form-title').textContent='Uredi storitev';
+      document.getElementById('service-save').textContent='Shrani spremembe';
+      document.getElementById('service-cancel').hidden=false;
+      openView('services');
+      document.getElementById('service-name').focus();
+    }
+    function resetServiceForm() {
+      document.getElementById('service-form').reset();
+      document.getElementById('service-id').value='';
+      document.getElementById('service-duration').value=30;
+      document.getElementById('service-active').checked=true;
+      document.getElementById('service-form-title').textContent='Dodaj storitev';
+      document.getElementById('service-save').textContent='Shrani storitev';
+      document.getElementById('service-cancel').hidden=true;
+      document.getElementById('service-message').textContent='';
+    }
+    function deleteService(id) {
+      const service=serviceFor(id); if(!service) return;
+      if(!confirm(`Odstranim storitev »${service.name}«? Obstoječe rezervacije ostanejo v seznamu.`)) return;
+      state.services=state.services.filter((s)=>s.id!==id); persist('Storitev je odstranjena.');
+    }
+    document.getElementById('service-form').addEventListener('submit',(event)=>{
+      event.preventDefault();
+      const id=document.getElementById('service-id').value;
+      const service={id:id||makeId(),name:document.getElementById('service-name').value.trim(),duration:Number(document.getElementById('service-duration').value),price:Number(document.getElementById('service-price').value),active:document.getElementById('service-active').checked};
+      if(!service.name || !Number.isFinite(service.duration)||service.duration<5||!Number.isFinite(service.price)||service.price<0) return;
+      const idx=state.services.findIndex((s)=>s.id===id);
+      if(idx>=0) state.services[idx]=service; else state.services.push(service);
+      resetServiceForm(); persist(idx>=0?'Spremembe storitve so shranjene.':'Storitev je dodana.');
+    });
+    document.getElementById('service-cancel').addEventListener('click',resetServiceForm);
+
+    // Availability and appointments
+    function rangeForDate(dateKey) { return state.blocks.filter((b)=>dateKey>=b.fromDate&&dateKey<=b.toDate); }
+    function minutes(value) { const [h,m]=value.split(':').map(Number); return h*60+m; }
+    function selectedAppointmentServiceIds() { return [...document.querySelectorAll('#appointment-services input:checked')].map((input)=>input.value); }
+    function selectedAppointmentServices() { return selectedAppointmentServiceIds().map(serviceFor).filter(Boolean); }
+    function renderAppointmentServiceOptions(selectedIds=[]) {
+      const container=document.getElementById('appointment-services');
+      if(!container)return;
+      const selected=new Set(selectedIds);
+      const available=state.services.filter((service)=>service.active||selected.has(service.id));
+      container.innerHTML=available.map((service)=>`<label class="appointment-service-option" for="appointment-service-${service.id}"><input id="appointment-service-${service.id}" type="checkbox" value="${service.id}" ${selected.has(service.id)?'checked':''}><span><strong>${escapeHtml(service.name)}</strong><small>${durationText(service.duration)}</small></span><span class="option-price">${money(service.price)}</span></label>`).join('')||'<p class="empty">Najprej dodaj aktivno storitev.</p>';
+      container.querySelectorAll('input').forEach((input)=>input.addEventListener('change',refreshAvailableTimes));
+      refreshAvailableTimes();
+    }
+    function refreshAvailableTimes() {
+      const services=selectedAppointmentServices();
+      const duration=services.reduce((sum,service)=>sum+service.duration,0);
+      const price=services.reduce((sum,service)=>sum+service.price,0);
+      const date=document.getElementById('appointment-date').value;
+      const selectedTime=document.getElementById('appointment-time');
+      const options=document.getElementById('available-time-grid');
+      const help=document.getElementById('available-time-help');
+      const total=document.getElementById('appointment-total');
+      const currentTime=selectedTime.value;
+      if(!services.length||!date) {
+        selectedTime.value=''; options.innerHTML='';
+        help.textContent=services.length?'Izberi datum za prikaz prostih začetkov.':'Izberi eno ali več storitev.';
+        total.textContent=services.length?`${durationText(duration)} · ${money(price)}`:'Izberi eno ali več storitev za izračun skupnega časa in cene.';
+        return;
+      }
+      const localDate=new Date(`${date}T12:00:00`),day=(localDate.getDay()+6)%7,hours=state.hours.find((item)=>item.day===day);
+      const starts=[];
+      if(hours&&!hours.closed&&hours.start&&hours.end) {
+        const first=Math.ceil(minutes(hours.start)/30)*30,close=minutes(hours.end),excludeId=document.getElementById('appointment-id').value||null;
+        for(let start=first;start+duration<=close;start+=30) if(isOpen(date,start,duration,excludeId)) starts.push(start);
+      }
+      if(!starts.includes(currentTime?minutes(currentTime):-1)) selectedTime.value='';
+      const chosen=selectedTime.value;
+      options.innerHTML=starts.map((start)=>`<button class="time-choice ${chosen===`${String(Math.floor(start/60)).padStart(2,'0')}:${String(start%60).padStart(2,'0')}`?'selected':''}" type="button" data-start="${start}">${String(Math.floor(start/60)).padStart(2,'0')}:${String(start%60).padStart(2,'0')}</button>`).join('');
+      options.querySelectorAll('[data-start]').forEach((button)=>button.addEventListener('click',()=>{
+        const start=Number(button.dataset.start);
+        selectedTime.value=`${String(Math.floor(start/60)).padStart(2,'0')}:${String(start%60).padStart(2,'0')}`;
+        refreshAvailableTimes();
+      }));
+      help.textContent=starts.length?`${starts.length} izvedljivih začetkov · trajanje ${durationText(duration)}.`:'Za izbrane storitve na ta dan ni dovolj dolgega prostega termina.';
+      total.textContent=`${services.length===1?'1 storitev':`${services.length} izbranih storitev`} · skupaj ${durationText(duration)} · ${money(price)}${chosen?` · začetek ob ${chosen}`:''}`;
+    }
+    function isOpen(dateKey,start,duration,excludeId=null) {
+      const date=new Date(`${dateKey}T12:00:00`), day=(date.getDay()+6)%7, hours=state.hours.find((h)=>h.day===day);
+      if(!hours||hours.closed||!hours.start||!hours.end) return false;
+      const end=start+duration, opening=minutes(hours.start), closing=minutes(hours.end);
+      if(start<opening||end>closing) return false;
+      if(hours.hasBreak && start<minutes(hours.breakEnd) && end>minutes(hours.breakStart)) return false;
+      const dayBlocks=rangeForDate(dateKey);
+      if(dayBlocks.some((b)=>b.allDay || (start<minutes(b.end)&&end>minutes(b.start)))) return false;
+      const newStart=new Date(`${dateKey}T${String(Math.floor(start/60)).padStart(2,'0')}:${String(start%60).padStart(2,'0')}:00`);
+      const newEnd=new Date(newStart.getTime()+duration*60000);
+      return !state.appointments.some((a)=>{
+        if(a.id===excludeId) return false;
+        const startExisting=appointmentDate(a),endExisting=appointmentEnd(a);
+        return startExisting<newEnd && endExisting>newStart;
+      });
+    }
+    function renderAppointments() {
+      const tbody=document.getElementById('appointment-rows');
+      const list=[...state.appointments].sort((a,b)=>a.start.localeCompare(b.start));
+      document.getElementById('appointment-count').textContent=`${list.length} terminov`;
+      tbody.innerHTML=list.map((a)=>{
+        const date=appointmentDate(a),end=appointmentEnd(a);
+        return `<tr><td><strong>${fmtDate(date,{weekday:'short',day:'numeric',month:'short'})}</strong><br>${fmtDate(date,{hour:'2-digit',minute:'2-digit'})}–${fmtDate(end,{hour:'2-digit',minute:'2-digit'})}</td><td>${escapeHtml(a.client)}${a.contact?`<br><span style="color:var(--muted)">${escapeHtml(a.contact)}</span>`:''}</td><td>${escapeHtml(appointmentServiceText(a))}</td><td>${durationText(appointmentDuration(a))}</td><td>${money(appointmentPrice(a))}</td><td><span class="status ${a.status==='Novo'?'pending':''}">${escapeHtml(a.status||'Potrjeno')}</span></td><td><div class="table-actions"><button class="mini-button" type="button" data-edit-appointment="${a.id}">Uredi</button><button class="mini-button" type="button" data-toggle-status="${a.id}">${a.status==='Potrjeno'?'Označi novo':'Potrdi'}</button><button class="mini-button remove" type="button" data-remove-appointment="${a.id}">Odstrani</button></div></td></tr>`;
+      }).join('')||'<tr><td colspan="7" class="empty">Ni rezervacij. Lahko jo dodaš ročno.</td></tr>';
+      tbody.querySelectorAll('[data-remove-appointment]').forEach((button)=>button.addEventListener('click',()=>removeAppointment(button.dataset.removeAppointment)));
+      tbody.querySelectorAll('[data-edit-appointment]').forEach((button)=>button.addEventListener('click',()=>editAppointment(button.dataset.editAppointment)));
+      tbody.querySelectorAll('[data-toggle-status]').forEach((button)=>button.addEventListener('click',()=>{
+        const a=state.appointments.find((item)=>item.id===button.dataset.toggleStatus); if(!a)return; a.status=a.status==='Potrjeno'?'Novo':'Potrjeno'; persist('Stanje rezervacije je posodobljeno.');
+      }));
+    }
+    function removeAppointment(id) {
+      const appointment=state.appointments.find((a)=>a.id===id); if(!appointment)return;
+      if(!confirm(`Odstranim rezervacijo za ${appointment.client}? Termin bo sproščen.`))return;
+      state.appointments=state.appointments.filter((a)=>a.id!==id); persist('Rezervacija je odstranjena in termin sproščen.');
+    }
+    function editAppointment(id) {
+      const appointment=state.appointments.find((a)=>a.id===id); if(!appointment)return;
+      const date=appointmentDate(appointment);
+      document.getElementById('appointment-id').value=appointment.id;
+      document.getElementById('appointment-client').value=appointment.client;
+      document.getElementById('appointment-contact').value=appointment.contact||'';
+      document.getElementById('appointment-date').value=keyDate(date);
+      document.getElementById('appointment-time').value=`${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+      renderAppointmentServiceOptions(appointment.serviceIds?.length?appointment.serviceIds:(appointment.serviceId?[appointment.serviceId]:[]));
+      document.getElementById('appointment-submit').textContent='Shrani spremembe';
+      document.getElementById('appointment-cancel-edit').hidden=false;
+      document.getElementById('appointment-message').textContent='Urejaš izbrano rezervacijo.';
+      openView('appointments');
+      document.getElementById('appointment-client').focus({preventScroll:true});
+    }
+    function resetAppointmentForm() {
+      document.getElementById('appointment-form').reset();
+      document.getElementById('appointment-id').value='';
+      document.getElementById('appointment-time').value='';
+      document.getElementById('appointment-date').value=keyDate(nextMonday());
+      renderAppointmentServiceOptions([]);
+      document.getElementById('appointment-submit').textContent='Dodaj rezervacijo';
+      document.getElementById('appointment-cancel-edit').hidden=true;
+      document.getElementById('appointment-message').textContent='';
+    }
+    function renderAgenda() {
+      const monday=shiftDate(nextMonday(),agendaOffset*7), saturday=shiftDate(monday,5);
+      document.getElementById('agenda-week-label').textContent=`${fmtDate(monday,{day:'numeric',month:'short'})} – ${fmtDate(saturday,{day:'numeric',month:'short',year:'numeric'})}`;
+      const headers=Array.from({length:6},(_,i)=>{const date=shiftDate(monday,i);return `<div class="agenda-head"><strong>${shortDays[i]}</strong><span>${fmtDate(date,{day:'numeric',month:'numeric'})}</span></div>`;}).join('');
+      const timeAxis=`<div class="agenda-time" aria-hidden="true">${Array.from({length:20},(_,i)=>`<span>${String(8+Math.floor(i/2)).padStart(2,'0')}:${i%2?'30':'00'}</span>`).join('')}</div>`;
+      const columns=Array.from({length:6},(_,day)=>{
+        const date=shiftDate(monday,day),dateId=keyDate(date);
+        const appointments=state.appointments.filter((a)=>keyDate(appointmentDate(a))===dateId).map((a)=>{
+          const startDate=appointmentDate(a),start=startDate.getHours()*60+startDate.getMinutes(),duration=appointmentDuration(a),service=serviceFor(a.serviceId);
+          return {id:a.id,start,duration,label:a.client,detail:appointmentServiceText(a),kind:'appointment'};
+        });
+        const dayHours=state.hours.find((item)=>item.day===day);
+        const blocks=rangeForDate(dateId).map((b)=>{
+          const h=state.hours.find((item)=>item.day===day); const start=b.allDay?minutes(h?.start||'08:00'):minutes(b.start); const end=b.allDay?minutes(h?.end||'18:00'):minutes(b.end);
+          return {id:b.id,start,duration:end-start,label:b.type,detail:b.note||(b.allDay?'Cel dan':`${b.start}–${b.end}`),kind:'block'};
+        });
+        if(dayHours && !dayHours.closed && dayHours.hasBreak) blocks.push({id:`break-${dateId}`,start:minutes(dayHours.breakStart),duration:minutes(dayHours.breakEnd)-minutes(dayHours.breakStart),label:'Malica',detail:'Redni odmor',kind:'break'});
+        const events=[...appointments,...blocks].map((e)=>{
+          const top=Math.max(0,((e.start-480)/30)*38),height=Math.max(23,(e.duration/30)*38);
+          const removeButton=e.kind==='break'?'':`<button class="event-remove" type="button" title="Odstrani ${e.kind==='block'?'blokado':'rezervacijo'}" aria-label="Odstrani dogodek" data-event-kind="${e.kind}" data-event-id="${e.id}">×</button>`;
+          return `<div class="agenda-event ${e.kind==='block'||e.kind==='break'?'block':''}" style="top:${top}px;height:${height}px"><strong>${String(Math.floor(e.start/60)).padStart(2,'0')}:${String(e.start%60).padStart(2,'0')} · ${escapeHtml(e.label)}</strong><span>${escapeHtml(e.detail)}</span>${removeButton}</div>`;
+        }).join('');
+        return `<div class="agenda-day" aria-label="${shortDays[day]} ${dateId}">${events}</div>`;
+      }).join('');
+      const grid=document.getElementById('agenda-grid');
+      grid.innerHTML=`<div></div>${headers}${timeAxis}${columns}`;
+      grid.querySelectorAll('[data-event-kind="appointment"]').forEach((button)=>button.addEventListener('click',()=>removeAppointment(button.dataset.eventId)));
+      grid.querySelectorAll('[data-event-kind="block"]').forEach((button)=>button.addEventListener('click',()=>removeBlock(button.dataset.eventId)));
+    }
+    document.getElementById('agenda-prev').addEventListener('click',()=>{agendaOffset--;renderAgenda();});
+    document.getElementById('agenda-next').addEventListener('click',()=>{agendaOffset++;renderAgenda();});
+    document.getElementById('appointment-date').addEventListener('change',()=>{
+      document.getElementById('appointment-time').value='';
+      refreshAvailableTimes();
+    });
+    document.getElementById('appointment-form').addEventListener('submit',(event)=>{
+      event.preventDefault();
+      const id=document.getElementById('appointment-id').value;
+      const services=selectedAppointmentServices(),date=document.getElementById('appointment-date').value,time=document.getElementById('appointment-time').value;
+      const message=document.getElementById('appointment-message'); message.className='form-message';
+      if(!services.length||!date||!time){message.textContent='Izberi vsaj eno storitev, datum in izvedljiv začetek.';message.classList.add('error');return;}
+      const duration=services.reduce((sum,service)=>sum+service.duration,0);
+      const price=services.reduce((sum,service)=>sum+service.price,0);
+      const start=minutes(time);
+      if(!isOpen(date,start,duration,id||null)){message.textContent='Ta termin ni več izvedljiv. Izberi drug zeleni začetek.';message.classList.add('error');refreshAvailableTimes();return;}
+      const serviceIds=services.map((service)=>service.id);
+      const updated={id:id||makeId(),client:document.getElementById('appointment-client').value.trim(),contact:document.getElementById('appointment-contact').value.trim(),serviceId:serviceIds[0],serviceIds,serviceName:services.map((service)=>service.name).join(' + '),start:`${date}T${time}:00`,duration,price,status:'Potrjeno'};
+      if(id) state.appointments=state.appointments.map((a)=>a.id===id?{...a,...updated}:a); else state.appointments.push(updated);
+      const notice=id?'Spremembe rezervacije so shranjene.':'Rezervacija je dodana.';
+      resetAppointmentForm(); message.textContent=notice; persist(notice);
+    });
+    document.getElementById('appointment-cancel-edit').addEventListener('click',resetAppointmentForm);
+
+    // Regular weekly hours and breaks
+    function renderHours() {
+      document.getElementById('hours-rows').innerHTML=state.hours.map((h)=>`<tr data-hours-day="${h.day}"><td><strong>${weekdays[h.day]}</strong></td><td><input type="checkbox" class="hours-closed" aria-label="${weekdays[h.day]} zaprto" ${h.closed?'':'checked'}></td><td><input type="time" class="hours-start" value="${h.start}" ${h.closed?'disabled':''}></td><td><input type="time" class="hours-end" value="${h.end}" ${h.closed?'disabled':''}></td><td><input type="checkbox" class="hours-break" aria-label="${weekdays[h.day]} odmor" ${h.hasBreak?'checked':''} ${h.closed?'disabled':''}></td><td><input type="time" class="break-start" value="${h.breakStart}" ${h.closed||!h.hasBreak?'disabled':''}></td><td><input type="time" class="break-end" value="${h.breakEnd}" ${h.closed||!h.hasBreak?'disabled':''}></td></tr>`).join('');
+      document.querySelectorAll('.hours-closed').forEach((input)=>input.addEventListener('change',()=>{
+        const row=input.closest('tr');
+        row.querySelectorAll('input[type=time]').forEach((field)=>{
+          const isBreak=field.classList.contains('break-start')||field.classList.contains('break-end');
+          field.disabled=!input.checked||(isBreak&&!row.querySelector('.hours-break').checked);
+        });
+        row.querySelector('.hours-break').disabled=!input.checked;
+      }));
+      document.querySelectorAll('.hours-break').forEach((input)=>input.addEventListener('change',()=>{const row=input.closest('tr');row.querySelector('.break-start').disabled=!input.checked||!row.querySelector('.hours-closed').checked;row.querySelector('.break-end').disabled=!input.checked||!row.querySelector('.hours-closed').checked;}));
+    }
+    document.getElementById('hours-save').addEventListener('click',()=>{
+      const hours=[]; let error='';
+      document.querySelectorAll('#hours-rows tr').forEach((row)=>{
+        const day=Number(row.dataset.hoursDay),open=row.querySelector('.hours-closed').checked,start=row.querySelector('.hours-start').value,end=row.querySelector('.hours-end').value,hasBreak=row.querySelector('.hours-break').checked,breakStart=row.querySelector('.break-start').value,breakEnd=row.querySelector('.break-end').value;
+        if(open && (!start||!end||minutes(start)>=minutes(end))) error=`Preveri delovni čas za ${weekdays[day]}.`;
+        if(open&&hasBreak&&(!breakStart||!breakEnd||minutes(breakStart)>=minutes(breakEnd)||minutes(breakStart)<minutes(start)||minutes(breakEnd)>minutes(end))) error=`Preveri čas malice za ${weekdays[day]}.`;
+        hours.push({day,closed:!open,start,end,hasBreak:open&&hasBreak,breakStart,breakEnd});
+      });
+      const message=document.getElementById('hours-message');
+      if(error){message.textContent=error;message.classList.add('error');return;}
+      message.textContent='';message.classList.remove('error');state.hours=hours;persist('Tedenski urnik je shranjen.');
+    });
+
+    // One-off time blocks, breaks, vacation, and holidays
+    const allDayInput=document.getElementById('block-allday');
+    allDayInput.addEventListener('change',()=>document.querySelectorAll('.block-time-field input').forEach((input)=>input.disabled=allDayInput.checked));
+    document.getElementById('block-type').addEventListener('change',(event)=>{
+      const allDay=['Dopust','Praznik'].includes(event.target.value);
+      allDayInput.checked=allDay;
+      document.querySelectorAll('.block-time-field input').forEach((input)=>input.disabled=allDay);
+    });
+    function renderBlocks() {
+      const rows=document.getElementById('block-rows');
+      document.getElementById('block-count').textContent=`${state.blocks.length} blokad`;
+      rows.innerHTML=[...state.blocks].sort((a,b)=>a.fromDate.localeCompare(b.fromDate)).map((b)=>`<tr><td><strong>${escapeHtml(b.type)}</strong></td><td>${b.fromDate}${b.toDate!==b.fromDate?` – ${b.toDate}`:''}</td><td>${b.allDay?'Cel dan':`${b.start}–${b.end}`}</td><td>${escapeHtml(b.note||'—')}</td><td><button class="mini-button remove" type="button" data-remove-block="${b.id}">Odstrani</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Ni dodanih blokad.</td></tr>';
+      rows.querySelectorAll('[data-remove-block]').forEach((button)=>button.addEventListener('click',()=>removeBlock(button.dataset.removeBlock)));
+    }
+    function removeBlock(id) { state.blocks=state.blocks.filter((b)=>b.id!==id); persist('Blokada je odstranjena.'); }
+    document.getElementById('block-form').addEventListener('submit',(event)=>{
+      event.preventDefault();
+      const fromDate=document.getElementById('block-from-date').value,toDate=document.getElementById('block-to-date').value,allDay=allDayInput.checked,start=document.getElementById('block-start').value,end=document.getElementById('block-end').value;
+      const message=document.getElementById('block-message');message.className='form-message';
+      if(!fromDate||!toDate||fromDate>toDate){message.textContent='Končni datum mora biti enak začetnemu ali poznejši.';message.classList.add('error');return;}
+      if(!allDay&&(!start||!end||minutes(start)>=minutes(end))){message.textContent='Ura konca mora biti poznejša od ure začetka.';message.classList.add('error');return;}
+      state.blocks.push({id:makeId(),type:document.getElementById('block-type').value,note:document.getElementById('block-note').value.trim(),fromDate,toDate,allDay,start:allDay?'00:00':start,end:allDay?'23:59':end});
+      event.target.reset();allDayInput.checked=false;document.querySelectorAll('.block-time-field input').forEach((input)=>input.disabled=false);document.getElementById('block-start').value='12:00';document.getElementById('block-end').value='13:00';document.getElementById('block-from-date').value=keyDate(nextMonday());document.getElementById('block-to-date').value=keyDate(nextMonday());message.textContent='Blokada je dodana v urnik.';persist('Blokada je dodana.');
+    });
+
+    // Salon profile
+    function renderSalon() {
+      document.getElementById('salon-name').value=state.salon.name||'';
+      document.getElementById('salon-address').value=state.salon.address||'';
+      document.getElementById('salon-phone').value=state.salon.phone||'';
+      document.getElementById('salon-email').value=state.salon.email||'';
+      document.getElementById('salon-instagram').value=state.salon.instagram||'';
+      document.getElementById('sidebar-salon-name').textContent=state.salon.name||'Salon';
+    }
+    document.getElementById('salon-form').addEventListener('submit',(event)=>{event.preventDefault();state.salon={name:document.getElementById('salon-name').value.trim(),address:document.getElementById('salon-address').value.trim(),phone:document.getElementById('salon-phone').value.trim(),email:document.getElementById('salon-email').value.trim(),instagram:document.getElementById('salon-instagram').value.trim()};document.getElementById('salon-message').textContent='Podatki so shranjeni v tem brskalniku.';persist('Podatki salona so shranjeni.');});
+
+    function renderAll() { renderOverview();renderServices();renderAppointments();renderHours();renderBlocks();renderSalon();renderAgenda(); }
+    // Date fields default to the next sample week.
+    const firstDay=keyDate(nextMonday());
+    document.getElementById('appointment-date').value=firstDay;
+    document.getElementById('block-from-date').value=firstDay;
+    document.getElementById('block-to-date').value=firstDay;
+    renderAll();
+  </script>
+</body>
+</html>
