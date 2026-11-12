@@ -196,7 +196,8 @@
         <form id="booking-form">
           <div class="form-grid">
             <div class="field"><label for="customer-name">Ime</label><input id="customer-name" name="name" autocomplete="name" required></div>
-            <div class="field"><label for="customer-contact">Telefon ali e-pošta</label><input id="customer-contact" name="contact" autocomplete="email" required></div>
+            <div class="field"><label for="customer-phone">Telefonska številka</label><input id="customer-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="npr. 031 123 456" required></div>
+            <div class="field"><label for="customer-email">Gmail oziroma e-pošta</label><input id="customer-email" name="email" type="email" autocomplete="email" placeholder="ime@gmail.com" required></div>
           </div>
           <p class="form-note">Z oddajo pošlješ zahtevo salonu. Termin velja šele, ko ga frizer potrdi.</p>
           <button class="submit-button" id="submit-button" type="submit" disabled>Izberi termin</button>
@@ -372,9 +373,10 @@
       if (!selectedSlot || !totals.duration || !slotFits(selectedSlot.date,selectedSlot.start,totals.duration)) return;
       const name = document.getElementById('customer-name').value.trim();
       const result = document.getElementById('result-message');
-      const contact=document.getElementById('customer-contact').value.trim();
+      const phone=document.getElementById('customer-phone').value.trim();
+      const email=document.getElementById('customer-email').value.trim();
       const chosen=totals.chosen;
-      const request={id:globalThis.crypto?.randomUUID?globalThis.crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`,client:name,contact,serviceId:chosen[0].id,serviceIds:chosen.map(s=>s.id),serviceName:chosen.map(s=>s.name).join(' + '),duration:totals.duration,price:totals.price,start:`${selectedSlot.dateKey}T${timeText(selectedSlot.start)}:00`,status:'Čaka na potrditev'};
+      const request={id:globalThis.crypto?.randomUUID?globalThis.crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`,client:name,phone,email,contact:phone,serviceId:chosen[0].id,serviceIds:chosen.map(s=>s.id),serviceName:chosen.map(s=>s.name).join(' + '),duration:totals.duration,price:totals.price,start:`${selectedSlot.dateKey}T${timeText(selectedSlot.start)}:00`,status:'Čaka na potrditev'};
       salonState.appointments=salonState.appointments||[]; salonState.appointments.push(request);
       try { localStorage.setItem(STORAGE_KEY,JSON.stringify(salonState)); }
       catch { result.textContent='Zahteve ni bilo mogoče shraniti v tem brskalniku.'; result.classList.add('visible'); return; }
