@@ -25,6 +25,8 @@
     .side-nav button:hover,.side-nav button.active { background:#292929; color:white; }
     .side-nav button.active { box-shadow:inset 3px 0 var(--cyan); }
     .side-icon { width:18px; color:var(--cyan); font-size:15px; text-align:center; }
+    .nav-count { min-width:19px; height:19px; margin-left:auto; display:inline-grid; place-items:center; border-radius:50%; background:var(--red); color:#fff; font-size:9px; font-weight:700; }
+    .nav-count[hidden] { display:none; }
     .sidebar-bottom { margin-top:auto; }
     .salon-chip { margin:15px 3px; padding:13px 11px; border:1px solid rgba(255,255,255,.17); }
     .salon-chip span { display:block; color:rgba(255,255,255,.5); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }
@@ -91,6 +93,9 @@
     .mini-button.remove { color:#a3211a; }
     .status { display:inline-block; padding:5px 7px; background:#e4f4e9; color:#22623a; font-size:9px; font-weight:700; text-transform:uppercase; }
     .status.pending { background:#fff1b8; color:#674d00; }
+    .status.rejected { background:#f3e2e0; color:#8b2d26; }
+    .pending-banner { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:15px; padding:13px 15px; border-left:4px solid #e2a300; background:var(--yellow); color:#604900; font-size:11px; }
+    .pending-banner[hidden] { display:none; }
     .section-split { display:grid; grid-template-columns:1fr 330px; gap:14px; align-items:start; }
     .form-panel { padding:19px; border:1px solid var(--line); background:white; }
     .form-panel h2 { margin-bottom:8px; }
@@ -133,6 +138,7 @@
     .agenda-day { position:relative; display:grid; grid-template-rows:repeat(20,var(--slot)); border-left:1px solid #e7e7e3; background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--slot) - 1px),#e7e7e3 calc(var(--slot) - 1px),#e7e7e3 var(--slot)); }
     .agenda-event { position:absolute; z-index:2; left:3px; right:3px; display:flex; flex-direction:column; justify-content:center; gap:3px; padding:5px 18px 5px 7px; overflow:hidden; border-left:3px solid var(--red); background:#fae3e1; color:#4a1714; font-size:9px; line-height:1.25; }
     .agenda-event.block { border-color:#c29300; background:#fff0bd; color:#5d4700; }
+    .agenda-event.pending { border-color:#c29300; background:#fff0bd; color:#5d4700; }
     .agenda-event strong { font-size:10px; }
     .event-remove { position:absolute; top:3px; right:3px; width:19px; height:19px; padding:0; border:0; background:rgba(255,255,255,.7); color:inherit; font-size:14px; line-height:19px; }
     .event-remove:hover { background:white; color:var(--red); }
@@ -184,7 +190,7 @@
       <p class="side-label">Upravljanje salona</p>
       <nav class="side-nav" aria-label="Upravljanje">
         <button class="active" type="button" data-view="overview"><span class="side-icon">▦</span>Pregled</button>
-        <button type="button" data-view="appointments"><span class="side-icon">▣</span>Rezervacije</button>
+        <button type="button" data-view="appointments"><span class="side-icon">▣</span>Rezervacije<span class="nav-count" id="pending-badge" hidden>0</span></button>
         <button type="button" data-view="services"><span class="side-icon">✂</span>Storitve in cenik</button>
         <button type="button" data-view="schedule"><span class="side-icon">◷</span>Urnik in odsotnosti</button>
         <button type="button" data-view="settings"><span class="side-icon">⚙</span>Podatki salona</button>
@@ -200,6 +206,7 @@
       <main class="content">
         <section class="view active" id="view-overview">
           <div class="page-head"><div><p class="eyebrow">Upravljanje / danes</p><h1>Pregled salona</h1></div><p class="page-note">Na enem mestu spremljaj rezervacije, storitve in urnik. V tej različici se spremembe shranijo samo v tem brskalniku.</p></div>
+          <div class="pending-banner" id="pending-banner" hidden><strong id="pending-banner-text"></strong><button class="button light" type="button" data-open-view="appointments">Preglej zahteve</button></div>
           <div class="stats">
             <article class="stat"><span>Prihajajoče rezervacije</span><strong id="stat-bookings">0</strong><small>V tem vzorčnem tednu</small></article>
             <article class="stat"><span>Aktivne storitve</span><strong id="stat-services">0</strong><small>Vidne v ceniku</small></article>
@@ -354,7 +361,11 @@
     // Dashboard
     function renderOverview() {
       const now=new Date();
-      const upcoming=state.appointments.filter((a)=>appointmentDate(a)>=now).sort((a,b)=>a.start.localeCompare(b.start));
+      const upcoming=state.appointments.filter((a)=>a.status!=='Zavrnjeno'&&appointmentDate(a)>=now).sort((a,b)=>a.start.localeCompare(b.start));
+      const pending=state.appointments.filter((a)=>a.status==='Čaka na potrditev').length;
+      const badge=document.getElementById('pending-badge'); badge.textContent=String(pending); badge.hidden=!pending;
+      const banner=document.getElementById('pending-banner'); banner.hidden=!pending;
+      document.getElementById('pending-banner-text').textContent=pending===1?'Nova rezervacija čaka na tvojo potrditev.':`${pending} rezervacij čaka na tvojo potrditev.`;
       document.getElementById('stat-bookings').textContent=String(upcoming.length);
       document.getElementById('stat-services').textContent=String(state.services.filter((s)=>s.active).length);
       const weekStart=startOfWeek(nextMonday());
@@ -479,7 +490,7 @@
       const newStart=new Date(`${dateKey}T${String(Math.floor(start/60)).padStart(2,'0')}:${String(start%60).padStart(2,'0')}:00`);
       const newEnd=new Date(newStart.getTime()+duration*60000);
       return !state.appointments.some((a)=>{
-        if(a.id===excludeId) return false;
+        if(a.id===excludeId||a.status==='Zavrnjeno') return false;
         const startExisting=appointmentDate(a),endExisting=appointmentEnd(a);
         return startExisting<newEnd && endExisting>newStart;
       });
@@ -490,12 +501,16 @@
       document.getElementById('appointment-count').textContent=`${list.length} terminov`;
       tbody.innerHTML=list.map((a)=>{
         const date=appointmentDate(a),end=appointmentEnd(a);
-        return `<tr><td><strong>${fmtDate(date,{weekday:'short',day:'numeric',month:'short'})}</strong><br>${fmtDate(date,{hour:'2-digit',minute:'2-digit'})}–${fmtDate(end,{hour:'2-digit',minute:'2-digit'})}</td><td>${escapeHtml(a.client)}${a.contact?`<br><span style="color:var(--muted)">${escapeHtml(a.contact)}</span>`:''}</td><td>${escapeHtml(appointmentServiceText(a))}</td><td>${durationText(appointmentDuration(a))}</td><td>${money(appointmentPrice(a))}</td><td><span class="status ${a.status==='Novo'?'pending':''}">${escapeHtml(a.status||'Potrjeno')}</span></td><td><div class="table-actions"><button class="mini-button" type="button" data-edit-appointment="${a.id}">Uredi</button><button class="mini-button" type="button" data-toggle-status="${a.id}">${a.status==='Potrjeno'?'Označi novo':'Potrdi'}</button><button class="mini-button remove" type="button" data-remove-appointment="${a.id}">Odstrani</button></div></td></tr>`;
+        const pending=a.status==='Čaka na potrditev', rejected=a.status==='Zavrnjeno';
+        const actions=pending?`<button class="mini-button" type="button" data-confirm-appointment="${a.id}">Potrdi</button><button class="mini-button remove" type="button" data-reject-appointment="${a.id}">Zavrni</button>`:rejected?`<button class="mini-button" type="button" data-reopen-appointment="${a.id}">Ponovno odpri</button>`:`<button class="mini-button" type="button" data-edit-appointment="${a.id}">Uredi</button>`;
+        return `<tr><td><strong>${fmtDate(date,{weekday:'short',day:'numeric',month:'short'})}</strong><br>${fmtDate(date,{hour:'2-digit',minute:'2-digit'})}–${fmtDate(end,{hour:'2-digit',minute:'2-digit'})}</td><td>${escapeHtml(a.client)}${a.contact?`<br><span style="color:var(--muted)">${escapeHtml(a.contact)}</span>`:''}</td><td>${escapeHtml(appointmentServiceText(a))}</td><td>${durationText(appointmentDuration(a))}</td><td>${money(appointmentPrice(a))}</td><td><span class="status ${pending?'pending':rejected?'rejected':''}">${escapeHtml(a.status||'Potrjeno')}</span></td><td><div class="table-actions">${actions}<button class="mini-button remove" type="button" data-remove-appointment="${a.id}">Odstrani</button></div></td></tr>`;
       }).join('')||'<tr><td colspan="7" class="empty">Ni rezervacij. Lahko jo dodaš ročno.</td></tr>';
       tbody.querySelectorAll('[data-remove-appointment]').forEach((button)=>button.addEventListener('click',()=>removeAppointment(button.dataset.removeAppointment)));
       tbody.querySelectorAll('[data-edit-appointment]').forEach((button)=>button.addEventListener('click',()=>editAppointment(button.dataset.editAppointment)));
-      tbody.querySelectorAll('[data-toggle-status]').forEach((button)=>button.addEventListener('click',()=>{
-        const a=state.appointments.find((item)=>item.id===button.dataset.toggleStatus); if(!a)return; a.status=a.status==='Potrjeno'?'Novo':'Potrjeno'; persist('Stanje rezervacije je posodobljeno.');
+      tbody.querySelectorAll('[data-confirm-appointment],[data-reject-appointment],[data-reopen-appointment]').forEach((button)=>button.addEventListener('click',()=>{
+        const a=state.appointments.find((item)=>item.id===button.dataset.confirmAppointment||item.id===button.dataset.rejectAppointment||item.id===button.dataset.reopenAppointment); if(!a)return;
+        a.status=button.hasAttribute('data-confirm-appointment')?'Potrjeno':button.hasAttribute('data-reject-appointment')?'Zavrnjeno':'Čaka na potrditev';
+        persist(a.status==='Potrjeno'?'Rezervacija je potrjena. Obvestilo stranki dodamo pozneje.':a.status==='Zavrnjeno'?'Rezervacija je zavrnjena. Termin je sproščen.':'Rezervacija znova čaka na potrditev.');
       }));
     }
     function removeAppointment(id) {
@@ -535,7 +550,7 @@
       const timeAxis=`<div class="agenda-time" aria-hidden="true">${Array.from({length:20},(_,i)=>`<span>${String(8+Math.floor(i/2)).padStart(2,'0')}:${i%2?'30':'00'}</span>`).join('')}</div>`;
       const columns=Array.from({length:6},(_,day)=>{
         const date=shiftDate(monday,day),dateId=keyDate(date);
-        const appointments=state.appointments.filter((a)=>keyDate(appointmentDate(a))===dateId).map((a)=>{
+        const appointments=state.appointments.filter((a)=>a.status!=='Zavrnjeno'&&keyDate(appointmentDate(a))===dateId).map((a)=>{
           const startDate=appointmentDate(a),start=startDate.getHours()*60+startDate.getMinutes(),duration=appointmentDuration(a),service=serviceFor(a.serviceId);
           return {id:a.id,start,duration,label:a.client,detail:appointmentServiceText(a),kind:'appointment'};
         });
@@ -644,6 +659,7 @@
     document.getElementById('salon-form').addEventListener('submit',(event)=>{event.preventDefault();state.salon={name:document.getElementById('salon-name').value.trim(),address:document.getElementById('salon-address').value.trim(),phone:document.getElementById('salon-phone').value.trim(),email:document.getElementById('salon-email').value.trim(),instagram:document.getElementById('salon-instagram').value.trim()};document.getElementById('salon-message').textContent='Podatki so shranjeni v tem brskalniku.';persist('Podatki salona so shranjeni.');});
 
     function renderAll() { renderOverview();renderServices();renderAppointments();renderHours();renderBlocks();renderSalon();renderAgenda(); }
+    window.addEventListener('storage',(event)=>{if(event.key!==STORAGE_KEY||!event.newValue)return;try{const incoming=JSON.parse(event.newValue);if(incoming&&Array.isArray(incoming.appointments)){state=incoming;renderAll();showToast('Nova sprememba rezervacij je prispela.');}}catch{}});
     // Date fields default to the next sample week.
     const firstDay=keyDate(nextMonday());
     document.getElementById('appointment-date').value=firstDay;

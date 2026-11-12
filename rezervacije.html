@@ -103,7 +103,7 @@
     .submit-button { min-height:46px; width:100%; margin-top:13px; border:0; background:var(--red); color:white; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; }
     .submit-button:hover:not(:disabled) { background:var(--ink); }
     .submit-button:disabled { background:#c8c8c4; color:#686865; cursor:not-allowed; }
-    .result-message { display:none; margin-top:12px; padding:12px; background:#e9f7ed; color:#145a31; font-size:11px; line-height:1.55; }
+    .result-message { display:none; margin-top:12px; padding:12px; background:#fff2c7; color:#674d00; font-size:11px; line-height:1.55; }
     .result-message.visible { display:block; }
     .footer { background:var(--ink); color:white; }
     .footer-inner { max-width:1440px; margin:auto; padding:25px 5vw; display:flex; justify-content:space-between; align-items:center; gap:20px; }
@@ -198,7 +198,7 @@
             <div class="field"><label for="customer-name">Ime</label><input id="customer-name" name="name" autocomplete="name" required></div>
             <div class="field"><label for="customer-contact">Telefon ali e-pošta</label><input id="customer-contact" name="contact" autocomplete="email" required></div>
           </div>
-          <p class="form-note">To je predogled: rezervacija se še ne shrani in kontaktnih podatkov ne pošlje. Povezavo s Supabase dodava po potrditvi storitev in cen.</p>
+          <p class="form-note">Z oddajo pošlješ zahtevo salonu. Termin velja šele, ko ga frizer potrdi.</p>
           <button class="submit-button" id="submit-button" type="submit" disabled>Izberi termin</button>
           <div class="result-message" id="result-message" role="status"></div>
         </form>
@@ -209,7 +209,8 @@
   <footer class="footer"><div class="footer-inner"><a class="brand" href="index.html"><span class="brand-symbol" aria-hidden="true">S</span>STAKi</a><span class="footer-copy">© 2026 STAKi · Cenik in termini so za zdaj vzorčni</span><a class="footer-link" href="cenik.html">Cenik ↗</a><a class="footer-link" href="informacije.html">Informacije ↗</a></div></footer>
 
   <script>
-    const services = [
+    const STORAGE_KEY = 'staki-admin-preview-v1';
+    const defaultServices = [
       { id:'cut-short', name:'Osnovno striženje', duration:30, price:18 },
       { id:'wash-cut', name:'Pranje in striženje', duration:45, price:23 },
       { id:'cut-long', name:'Striženje dolgih las', duration:60, price:32 },
@@ -228,9 +229,24 @@
     const weekGrid = document.getElementById('week-grid');
     const selectedServiceIds = new Set();
     const today = atMidnight(new Date());
-    const currentMonday = mondayOf(today);
-    let weekOffset = today.getDay() === 0 ? 0 : 1;
+    const currentMonday = addDays(mondayOf(today), ((today.getDay()+6)%7===0)?0:7-((today.getDay()+6)%7));
+    let weekOffset = 0;
     let selectedSlot = null;
+    function defaultState() {
+      const hours=Array.from({length:7},(_,day)=>({day,closed:day===6,start:'08:00',end:'18:00',hasBreak:false,breakStart:'12:00',breakEnd:'13:00'}));
+      const iso=(day,time)=>`${dateKey(addDays(currentMonday,day))}T${time}:00`;
+      return {salon:{name:'STAKi'},services:defaultServices.map(s=>({...s,active:true})),hours,blocks:[],appointments:[
+        {id:'demo-a',client:'Stranka A',contact:'',serviceId:'cut-short',serviceIds:['cut-short'],serviceName:'Osnovno striženje',duration:30,price:18,start:iso(0,'10:30'),status:'Potrjeno'},
+        {id:'demo-b',client:'Stranka B',contact:'',serviceId:'cut-beard',serviceIds:['cut-beard'],serviceName:'Striženje in brada',duration:60,price:29,start:iso(4,'14:00'),status:'Potrjeno'},
+        {id:'demo-c',client:'Stranka C',contact:'',serviceId:'roots',serviceIds:['roots'],serviceName:'Barvanje narastka',duration:90,price:48,start:iso(5,'11:00'),status:'Potrjeno'}
+      ]};
+    }
+    function loadSharedState() {
+      try { const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)); if(saved&&Array.isArray(saved.services)&&Array.isArray(saved.hours))return saved; } catch {}
+      const fresh=defaultState(); try{localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh));}catch{} return fresh;
+    }
+    let salonState=loadSharedState();
+    let services=salonState.services.filter(s=>s.active!==false);
 
     function atMidnight(date) { return new Date(date.getFullYear(), date.getMonth(), date.getDate()); }
     function mondayOf(date) {
@@ -277,20 +293,24 @@
         ? `Izbrane storitve trajajo ${durationText(totals.duration)}. Zeleni so samo začetki, pri katerih se storitev konča pred naslednjo rezervacijo.`
         : 'Najprej izberi storitev, nato klikni zelen začetek termina. Vsako polje predstavlja začetek na 30 minut.';
     }
-    function demoBookings(date) {
-      if (weekOffset !== 1) return [];
-      const day = date.getDay();
-      if (day === 1) return [{ start:10*60+30, duration:30, label:'Zasedeno' }];
-      if (day === 5) return [{ start:14*60, duration:60, label:'Zasedeno' }];
-      if (day === 6) return [{ start:11*60, duration:90, label:'Zasedeno' }];
-      return [];
+    function appointmentsFor(date) {
+      const id=dateKey(date);
+      return (salonState.appointments||[]).filter(a=>a.status!=='Zavrnjeno'&&String(a.start).slice(0,10)===id).map(a=>({start:new Date(a.start).getHours()*60+new Date(a.start).getMinutes(),duration:Number(a.duration)||30,label:a.status==='Čaka na potrditev'?'Čaka na potrditev':'Zasedeno'}));
     }
+    function blocksFor(date) {
+      const id=dateKey(date),day=(date.getDay()+6)%7,h=salonState.hours.find(h=>h.day===day); const blocks=[];
+      if(h&&!h.closed&&h.hasBreak)blocks.push({start:Number(h.breakStart.slice(0,2))*60+Number(h.breakStart.slice(3)),duration:(Number(h.breakEnd.slice(0,2))*60+Number(h.breakEnd.slice(3)))-(Number(h.breakStart.slice(0,2))*60+Number(h.breakStart.slice(3))),label:'Malica'});
+      for(const b of salonState.blocks||[])if(id>=b.fromDate&&id<=b.toDate){const start=b.allDay?(h?.start||'08:00'):b.start,end=b.allDay?(h?.end||'18:00'):b.end;const mins=v=>Number(v.slice(0,2))*60+Number(v.slice(3));blocks.push({start:mins(start),duration:mins(end)-mins(start),label:b.type||'Zasedeno'});}
+      return blocks;
+    }
+    function dayHours(date) { return salonState.hours.find(h=>h.day===(date.getDay()+6)%7); }
     function slotFits(date, start, duration) {
-      if (!duration || start < openMinute || start + duration > closeMinute) return false;
+      const hours=dayHours(date),opens=hours&&!hours.closed?Number(hours.start.slice(0,2))*60+Number(hours.start.slice(3)):openMinute,closes=hours&&!hours.closed?Number(hours.end.slice(0,2))*60+Number(hours.end.slice(3)):closeMinute;
+      if (!hours||hours.closed||!duration || start < opens || start + duration > closes) return false;
       const now = new Date();
       if (date < today) return false;
       if (dateKey(date) === dateKey(today) && start <= now.getHours()*60 + now.getMinutes()) return false;
-      return !demoBookings(date).some((booking) => start < booking.start + booking.duration && start + duration > booking.start);
+      return ![...appointmentsFor(date),...blocksFor(date)].some((booking) => start < booking.start + booking.duration && start + duration > booking.start);
     }
     function timeText(minutes) { return `${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`; }
     function formatDay(date) { return new Intl.DateTimeFormat('sl-SI',{weekday:'short'}).format(date).replace('.',''); }
@@ -314,7 +334,7 @@
           const label = available ? `Prosto od ${timeText(start)}, konec ob ${timeText(start+duration)}` : 'Ta začetek ne ustreza izbrani storitvi ali je zaseden';
           return `<button class="slot ${available?'is-available':''} ${isSelected?'is-selected':''} ${past?'is-past':''}" type="button" role="gridcell" aria-label="${formatDay(date)} ${formatDate(date)} ob ${timeText(start)}. ${label}" aria-pressed="${Boolean(isSelected)}" title="${timeText(start)}${available?` – ${timeText(start+duration)}`:''}" ${disabled?'disabled':''} data-date="${dateId}" data-start="${start}"></button>`;
         }).join('');
-        const busy = demoBookings(date).map((booking) => {
+        const busy = [...appointmentsFor(date),...blocksFor(date)].map((booking) => {
           const top = ((booking.start-openMinute)/interval)*37;
           const height = (booking.duration/interval)*37;
           return `<div class="busy-block" style="top:${top}px;height:${height}px" aria-label="Zaseden termin ${timeText(booking.start)} do ${timeText(booking.start+booking.duration)}">${booking.label}<br>${timeText(booking.start)}</div>`;
@@ -337,7 +357,7 @@
       empty.hidden = valid;
       selected.classList.toggle('visible',valid);
       submit.disabled = !valid;
-      submit.textContent = valid ? 'Potrdi vzorčno rezervacijo' : (totals.duration ? 'Izberi zelen termin' : 'Izberi storitev');
+      submit.textContent = valid ? 'Pošlji zahtevo za termin' : (totals.duration ? 'Izberi zelen termin' : 'Izberi storitev');
       if (valid) {
         const end = selectedSlot.start + totals.duration;
         document.getElementById('selected-date').textContent = `${new Intl.DateTimeFormat('sl-SI',{weekday:'long',day:'numeric',month:'long'}).format(selectedSlot.date)} ob ${timeText(selectedSlot.start)}`;
@@ -352,9 +372,18 @@
       if (!selectedSlot || !totals.duration || !slotFits(selectedSlot.date,selectedSlot.start,totals.duration)) return;
       const name = document.getElementById('customer-name').value.trim();
       const result = document.getElementById('result-message');
-      result.textContent = `Predogled rezervacije za ${name}: ${new Intl.DateTimeFormat('sl-SI',{weekday:'long',day:'numeric',month:'long'}).format(selectedSlot.date)} ob ${timeText(selectedSlot.start)}, ${durationText(totals.duration)}, ${money(totals.price)}. Nič ni bilo poslano ali shranjeno.`;
+      const contact=document.getElementById('customer-contact').value.trim();
+      const chosen=totals.chosen;
+      const request={id:globalThis.crypto?.randomUUID?globalThis.crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`,client:name,contact,serviceId:chosen[0].id,serviceIds:chosen.map(s=>s.id),serviceName:chosen.map(s=>s.name).join(' + '),duration:totals.duration,price:totals.price,start:`${selectedSlot.dateKey}T${timeText(selectedSlot.start)}:00`,status:'Čaka na potrditev'};
+      salonState.appointments=salonState.appointments||[]; salonState.appointments.push(request);
+      try { localStorage.setItem(STORAGE_KEY,JSON.stringify(salonState)); }
+      catch { result.textContent='Zahteve ni bilo mogoče shraniti v tem brskalniku.'; result.classList.add('visible'); return; }
+      result.textContent=`Zahteva za ${new Intl.DateTimeFormat('sl-SI',{weekday:'long',day:'numeric',month:'long'}).format(selectedSlot.date)} ob ${timeText(selectedSlot.start)} je oddana. Frizer jo mora še potrditi. Skupaj ${durationText(totals.duration)} · ${money(totals.price)}.`;
       result.classList.add('visible');
+      selectedSlot=null; updateTotals(); renderWeek();
     });
+
+    window.addEventListener('storage',(event)=>{if(event.key!==STORAGE_KEY||!event.newValue)return;try{salonState=JSON.parse(event.newValue);services=salonState.services.filter(s=>s.active!==false);renderServices();updateTotals();renderWeek();}catch{}});
 
     renderServices();
     updateTotals();
